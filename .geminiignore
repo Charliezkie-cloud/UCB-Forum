@@ -1,90 +1,107 @@
-# ==============================================================================
-# .geminiignore - FINOPS & CONTEXT OPTIMIZATION
-# Project: UCB Forum (ASP.NET Core + React/TypeScript + MS SQL Server)
-# ==============================================================================
+## ===================================================================
+## ASP.NET Core + React Frontend (Optimized for Git & AI CLI Agents)
+## ===================================================================
 
-# 1. SYSTEM & IDE NOISE
-.DS_Store
-Thumbs.db
-Desktop.ini
-$RECYCLE.BIN/
-.vs/
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-.idea/
-*.user
-*.suo
-*.userosscache
-*.sln.docstates
+# -------------------------------------------------------------------
+# 1. Local Secrets, Environment Configs & Credentials
+# -------------------------------------------------------------------
+appsettings.Development.json
+appsettings.Local.json
+secrets.json
+*.env
+*.env.local
+*.env.development.local
+*.env.test.local
+*.env.production.local
+*.pfx
+*.pem
+*.key
 
-# 2. DEPENDENCIES & LOCK FILES (TOKEN ECONOMY)
+# -------------------------------------------------------------------
+# 2. React / Frontend Dependencies & Build Artifacts
+# -------------------------------------------------------------------
 node_modules/
 **/node_modules/
-package-lock.json
-**/package-lock.json
-yarn.lock
-**/yarn.lock
-pnpm-lock.yaml
-**/pnpm-lock.yaml
-bun.lockb
-.env
-.env.*
-!.env.example
-
-# 3. BUILD & TARGET OUTPUT
-bin/
-**/bin/
-obj/
-**/obj/
-dist/
-**/dist/
-build/
-**/build/
-out/
-**/out/
-
-# 4. CACHES & TOOL METADATA
-.vite/
-**/.vite/
+ClientApp/node_modules/
+ClientApp/build/
+ClientApp/dist/
+wwwroot/dist/
+wwwroot/build/
+.npm
 .eslintcache
-.tsbuildinfo
-**/.tsbuildinfo
-.turbo/
-.cache/
+.stylelintcache
 
-# 5. BINARY & RICH ASSETS
-*.png
-*.jpg
-*.jpeg
-*.gif
-*.webp
-*.svg
-*.ico
-*.psd
-*.fig
-*.pdf
-*.zip
-*.tar.gz
-*.woff
-*.woff2
-*.ttf
-*.eot
-
-# 6. LOCAL DATABASES & LOGS
-*.log
-*.mdf
-*.ldf
-*.db
-*.sqlite
-*.sqlite3
-*.sql.gz
-
-# 7. COMPILED BINARIES & ARTIFACTS
+# -------------------------------------------------------------------
+# 3. .NET / C# Build Output & Binaries
+# -------------------------------------------------------------------
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+bld/
+[Ll]og/
+[Ll]ogs/
+artifacts/
+publish/
 *.dll
 *.exe
 *.pdb
-*.cache
-*.js.map
-*.css.map
+*.min.js
+*.min.css
+*.map
+
+# -------------------------------------------------------------------
+# 4. Database & SQL Local Files
+# -------------------------------------------------------------------
+*.mdf
+*.ldf
+*.ndf
+*.sqlite
+*.db
+
+# -------------------------------------------------------------------
+# 5. IDEs, Editors & AI CLI Agent Artifacts
+# -------------------------------------------------------------------
+.vs/
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# AI CLI Agent logs & history
+.aider*
+*.chat.history.md
+
+# -------------------------------------------------------------------
+# 6. Test Results & Code Coverage
+# -------------------------------------------------------------------
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+TestResult.xml
+nunit-*.xml
+coverage*.json
+coverage*.xml
+coverage*.info
+*.coverage
+*.coveragexml
+BenchmarkDotNet.Artifacts/
+
+# -------------------------------------------------------------------
+# 7. OS Generated Files
+# -------------------------------------------------------------------
+.DS_Store
+.DS_Store?
+ehthumbs.db
+Icon?
+Thumbs.db

@@ -130,6 +130,8 @@ Ref: PostLikes.(PostId, UserId) > (Posts.PostID, Users.UserId) [delete: cascade]
 3. **Surgical Precision:** When adding new logic or fixing bugs, wrap modifications locally. Do not touch adjacent functions or helper files unless required for system compilation.
 4. **Preserve Human Style Patterns:** When extending existing files, match the formatting, naming, and architectural patterns established by the human author rather than enforcing external preferences.
 5. **Human Annotations Take Precedence:** Respect special comments like `// HUMAN-CODED`, `// DO NOT MODIFY`, or `/* KEEP ORIGINAL */`. Treat any annotated code block as strictly immutable.
+6. **Avoid Unnecessary Comments:** Do not write self-explanatory or obvious comments. Only comment on complex business logic, edge cases, or non-obvious algorithms.
+7. **Clean & Maintainable Code (DRY Principle):** Avoid repetitive code, hacky workarounds, and monolithic functions. Extract reusable logic into dedicated helper classes, services, or utility modules following standard architecture.
 
 ---
 
