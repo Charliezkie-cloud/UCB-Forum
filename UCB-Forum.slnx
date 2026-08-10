@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="AGENTS.md" />
+  </Folder>
+  <Project Path="frontend/frontend.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="UCB-Forum.AppHost/UCB-Forum.AppHost.csproj" />
+  <Project Path="UCB-Forum.Server/UCB-Forum.Server.csproj" />
+</Solution>

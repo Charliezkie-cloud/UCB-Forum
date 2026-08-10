@@ -1,0 +1,90 @@
+# ==============================================================================
+# .geminiignore - FINOPS & CONTEXT OPTIMIZATION
+# Project: UCB Forum (ASP.NET Core + React/TypeScript + MS SQL Server)
+# ==============================================================================
+
+# 1. SYSTEM & IDE NOISE
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.vs/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# 2. DEPENDENCIES & LOCK FILES (TOKEN ECONOMY)
+node_modules/
+**/node_modules/
+package-lock.json
+**/package-lock.json
+yarn.lock
+**/yarn.lock
+pnpm-lock.yaml
+**/pnpm-lock.yaml
+bun.lockb
+.env
+.env.*
+!.env.example
+
+# 3. BUILD & TARGET OUTPUT
+bin/
+**/bin/
+obj/
+**/obj/
+dist/
+**/dist/
+build/
+**/build/
+out/
+**/out/
+
+# 4. CACHES & TOOL METADATA
+.vite/
+**/.vite/
+.eslintcache
+.tsbuildinfo
+**/.tsbuildinfo
+.turbo/
+.cache/
+
+# 5. BINARY & RICH ASSETS
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.svg
+*.ico
+*.psd
+*.fig
+*.pdf
+*.zip
+*.tar.gz
+*.woff
+*.woff2
+*.ttf
+*.eot
+
+# 6. LOCAL DATABASES & LOGS
+*.log
+*.mdf
+*.ldf
+*.db
+*.sqlite
+*.sqlite3
+*.sql.gz
+
+# 7. COMPILED BINARIES & ARTIFACTS
+*.dll
+*.exe
+*.pdb
+*.cache
+*.js.map
+*.css.map
