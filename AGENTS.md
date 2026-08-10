@@ -51,7 +51,8 @@ Table Profiles {
   CreatedAt DATETIME2 [not null]
   UpdatedAt DATETIME2 [not null]
   UserId INT [unique, not null]
-  
+
+  Username NVARCHAR(255) [not null]
   Bio NVARCHAR(500) [default: null]
   AvatarUrl VARCHAR(2048) [default: null]
   Facebook NVARCHAR(100) [default: null]

@@ -76,6 +76,11 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => e.UserId)
                 .IsUnique();
 
+            entity.Property(e => e.Username)
+                .HasColumnType("nvarchar(255)")
+                .HasMaxLength(255)
+                .IsRequired();
+
             entity.Property(e => e.Bio)
                 .HasColumnType("nvarchar(500)")
                 .HasMaxLength(500);

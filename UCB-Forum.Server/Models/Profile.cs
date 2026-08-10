@@ -7,6 +7,7 @@ public class Profile
     public DateTime UpdatedAt { get; set; }
     public int UserId { get; set; }
 
+    public string Username { get; set; } = string.Empty;
     public string? Bio { get; set; }
     public string? AvatarUrl { get; set; }
     public string? Facebook { get; set; }
