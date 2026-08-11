@@ -37,7 +37,7 @@ public class ProfilesController : ControllerBase
     }
 
     [HttpGet("user/{userId:int}")]
-    [AllowAnonymous]
+    [Authorize]
     public async Task<ActionResult<ProfileResponse>> GetProfileByUserId(
         [FromRoute] int userId,
         CancellationToken cancellationToken)
@@ -52,7 +52,7 @@ public class ProfilesController : ControllerBase
     }
 
     [HttpGet("username/{username}")]
-    [AllowAnonymous]
+    [Authorize]
     public async Task<ActionResult<ProfileResponse>> GetProfileByUsername(
         [FromRoute] string username,
         CancellationToken cancellationToken)
@@ -72,18 +72,22 @@ public class ProfilesController : ControllerBase
         [FromBody] UpdateProfileRequest request,
         CancellationToken cancellationToken)
     {
-        if (!TryGetUserId(out var userId))
+        if (!TryGetUserId(out var userId) || !TryGetRoleCode(out var callerRoleCode))
         {
             return Unauthorized(new { message = "Invalid user identity." });
         }
 
-        var (response, error) = await _profileService.UpdateProfileAsync(userId, request, cancellationToken);
+        var (response, error) = await _profileService.UpdateProfileAsync(userId, request, userId, callerRoleCode, cancellationToken);
 
         if (error is not null)
         {
             if (error == "This username is already taken.")
             {
                 return Conflict(new { message = error });
+            }
+            if (error == "You are not authorized to update this profile.")
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = error });
             }
             return BadRequest(new { message = error });
         }
@@ -128,6 +132,15 @@ public class ProfilesController : ControllerBase
             ?? User.FindFirstValue("sub");
 
         return int.TryParse(userIdValue, out userId);
+    }
+
+    private bool TryGetRoleCode(out int roleCode)
+    {
+        var roleValue = User.FindFirstValue("userRoleCode")
+            ?? User.FindFirstValue(ClaimTypes.Role)
+            ?? "0";
+
+        return int.TryParse(roleValue, out roleCode);
     }
 
     private bool IsAdmin()

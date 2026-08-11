@@ -35,6 +35,8 @@ public class ProfileService
     public async Task<(ProfileResponse? Response, string? Error)> UpdateProfileAsync(
         int userId,
         UpdateProfileRequest request,
+        int callerUserId,
+        int callerRoleCode,
         CancellationToken cancellationToken = default)
     {
         var profile = await _db.Profiles
@@ -44,6 +46,14 @@ public class ProfileService
         if (profile is null)
         {
             return (null, "Profile not found.");
+        }
+
+        var isModOrAdmin = callerRoleCode == (int)UserRole.Moderator || callerRoleCode == (int)UserRole.Admin;
+
+        // Only the profile owner or a Moderator/Admin may apply updates
+        if (callerUserId != userId && !isModOrAdmin)
+        {
+            return (null, "You are not authorized to update this profile.");
         }
 
         var newUsername = request.Username.Trim();
@@ -60,11 +70,11 @@ public class ProfileService
             }
         }
 
-        // Program and YearLevel can only be edited by the user if they are a verified student
+        // Program and YearLevel can be edited by: verified students, Moderators, or Admins
         var isModifyingProgramOrYear = (request.Program != profile.Program) || (request.YearLevel != profile.YearLevel);
-        if (isModifyingProgramOrYear && !profile.IsVerifiedStudent)
+        if (isModifyingProgramOrYear && !profile.IsVerifiedStudent && !isModOrAdmin)
         {
-            return (null, "Only verified students can update Program and Year Level.");
+            return (null, "Only verified students, Moderators, or Admins can update Program and Year Level.");
         }
 
         profile.Username = newUsername;
@@ -75,7 +85,7 @@ public class ProfileService
         profile.Twitter = request.Twitter?.Trim();
         profile.Tiktok = request.Tiktok?.Trim();
 
-        if (profile.IsVerifiedStudent)
+        if (profile.IsVerifiedStudent || isModOrAdmin)
         {
             profile.Program = request.Program?.Trim();
             profile.YearLevel = request.YearLevel;
