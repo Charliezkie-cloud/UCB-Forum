@@ -2,6 +2,7 @@
 
 ## 1. Project Goal & Overview
 - **Project Name:** UCB Forum
+- **Ownership:** Developed solely by Charles Henry M. Tinoy Jr. Use "I" when referring to project updates, docs, or responses.
 - **Core Goal:** To create a dedicated, modern discussion forum for University of Cebu (Banilad) that empowers Guests, Students, and Teachers to share knowledge, ask questions, and build academic and extracurricular communities.
 - **Target Audience:** University students, faculty members, academic staff, and prospective/guest visitors.
 - **Key Features:**
