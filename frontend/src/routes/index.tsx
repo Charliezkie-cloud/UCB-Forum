@@ -5,6 +5,7 @@ import { AppLayout } from "@/components/layouts/AppLayout"
 import { AuthLayout } from "@/components/layouts/AuthLayout"
 import { HomePage } from "@/pages/HomePage"
 import { MyProfilePage } from "@/pages/MyProfilePage"
+import { UserProfilePage } from "@/pages/UserProfilePage"
 import { NotFoundPage } from "@/pages/NotFoundPage"
 import { LoginPage } from "@/pages/auth/LoginPage"
 import { RegisterPage } from "@/pages/auth/RegisterPage"
@@ -31,6 +32,7 @@ export const router = createBrowserRouter([
           { path: "/", element: <HomePage /> },
           { path: "/profile", element: <MyProfilePage /> },
           { path: "/me", element: <MyProfilePage /> },
+          { path: "/users/:userId", element: <UserProfilePage /> },
         ],
       },
     ],
