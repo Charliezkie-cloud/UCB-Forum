@@ -13,6 +13,7 @@ import {
   Trash2,
 } from "lucide-react"
 import { deactivateCategory, getCategories } from "@/api/categories"
+import { CategoryLucideIcon } from "@/components/categories/CategoryLucideIcon"
 import { CategoryFormDialog } from "@/components/categories/CategoryFormDialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -96,7 +97,10 @@ function CategoryTreeItem({
           )}
           title={node.description ?? node.name}
         >
-          <FolderTree className="size-4 shrink-0 text-primary/80" />
+          <CategoryLucideIcon
+            iconClass={node.iconClass}
+            className="size-4 shrink-0 text-primary/80"
+          />
           <span className="truncate">{node.name}</span>
           {node.isRestricted && (
             <Badge variant="outline" className="ml-1 h-5 shrink-0 px-1.5 text-[10px]">

@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import { deactivateCategory, getCategories, getCategoryBySlug } from "@/api/categories"
 import { CategoryFormDialog } from "@/components/categories/CategoryFormDialog"
+import { CategoryLucideIcon } from "@/components/categories/CategoryLucideIcon"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -191,7 +192,10 @@ export function CategoryDetailPage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between -mt-10 sm:-mt-12">
             <div className="flex items-end gap-4">
               <div className="flex size-20 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md ring-4 ring-card sm:size-24">
-                <FolderTree className="size-9 sm:size-10" />
+                <CategoryLucideIcon
+                  iconClass={category.iconClass}
+                  className="size-9 sm:size-10"
+                />
               </div>
               <div className="space-y-1 pb-1">
                 <div className="flex flex-wrap items-center gap-2">
@@ -316,7 +320,7 @@ export function CategoryDetailPage() {
                   className="group flex items-start gap-3 rounded-lg border border-border/80 bg-card p-3.5 transition-colors hover:border-primary/30 hover:bg-muted/30"
                 >
                   <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                    <FolderTree className="size-4" />
+                    <CategoryLucideIcon iconClass={sub.iconClass} className="size-4" />
                   </div>
                   <div className="min-w-0 flex-1 my-auto">
                     <div className="flex items-center gap-2">
