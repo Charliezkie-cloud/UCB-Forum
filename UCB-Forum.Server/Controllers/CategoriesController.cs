@@ -147,6 +147,35 @@ public class CategoriesController : ControllerBase
         return Ok(response);
     }
 
+    [HttpPatch("{categoryId:int}/posting-allowed")]
+    [Authorize]
+    public async Task<ActionResult<CategoryResponse>> UpdatePostingAllowed(
+        [FromRoute] int categoryId,
+        [FromBody] UpdateCategoryPostingAllowedRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!IsModeratorOrAdmin())
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = "Moderator or Admin permissions required." });
+        }
+
+        var (response, error) = await _categoryService.UpdatePostingAllowedAsync(
+            categoryId,
+            request.IsPostingAllowed,
+            cancellationToken);
+
+        if (error is not null)
+        {
+            if (error == "Category not found.")
+            {
+                return NotFound(new { message = error });
+            }
+            return BadRequest(new { message = error });
+        }
+
+        return Ok(response);
+    }
+
     [HttpDelete("{categoryId:int}")]
     [Authorize]
     public async Task<IActionResult> DeactivateCategory(

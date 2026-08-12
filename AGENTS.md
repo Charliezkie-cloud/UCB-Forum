@@ -84,6 +84,7 @@ Table Categories {
   IconClass VARCHAR(50) [default: null]
   DisplayOrder INT [default: 0]
   IsRestricted BIT [default: 0]
+  IsPostingAllowed BIT [default: 1]
   IsActive BIT [default: 1]
 }
 
