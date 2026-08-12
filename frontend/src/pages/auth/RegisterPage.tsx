@@ -33,7 +33,7 @@ export function RegisterPage() {
       await register({ username, email, password })
       navigate("/", { replace: true })
     } catch {
-      setError("Unable to register. Please try again.")
+      setError("We couldn't create your account. Please check your details and try again.")
     } finally {
       setIsSubmitting(false)
     }
@@ -47,7 +47,7 @@ export function RegisterPage() {
           <UserPlus className="size-5 text-primary" />
         </div>
         <CardDescription className="text-xs">
-          Join the University of Cebu Banilad discussion forum.
+          Set up your account and start talking with the UCB Banilad community.
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
@@ -60,7 +60,7 @@ export function RegisterPage() {
               <User className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
               <Input
                 id="username"
-                placeholder="johndoe"
+                placeholder="alexrivera"
                 autoComplete="username"
                 required
                 value={username}

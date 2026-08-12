@@ -25,7 +25,7 @@ import {
 
 const ROLE_NAMES: Record<number, { name: string; bgClass: string }> = {
   1: { name: "Guest", bgClass: "border-muted-foreground/30 text-muted-foreground" },
-  2: { name: "UCB Student", bgClass: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20" },
+  2: { name: "Student", bgClass: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20" },
   3: { name: "Faculty / Teacher", bgClass: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" },
   4: { name: "Moderator", bgClass: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20" },
   5: { name: "Admin", bgClass: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20" },
@@ -55,7 +55,7 @@ export function UserProfilePage() {
         setProfile(data)
       } catch (err: unknown) {
         console.error("Failed to load user profile", err)
-        setErrorMsg("This profile could not be found or is unavailable.")
+        setErrorMsg("This profile could not be found or is no longer available.")
       } finally {
         setLoading(false)
       }
@@ -68,7 +68,7 @@ export function UserProfilePage() {
     return (
       <div className="flex min-h-[400px] w-full flex-col items-center justify-center gap-3">
         <Loader2 className="size-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground font-medium">Loading profile...</p>
+        <p className="text-sm text-muted-foreground font-medium">Loading profile…</p>
       </div>
     )
   }
@@ -81,7 +81,7 @@ export function UserProfilePage() {
         </div>
         <h2 className="text-xl font-bold tracking-tight">Profile not found</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          {errorMsg || "We couldn't retrieve this user's profile."}
+          {errorMsg || "We couldn't load this profile. Try again in a moment."}
         </p>
         <Button className="mt-6" variant="outline" onClick={() => navigate(-1)}>
           <ArrowLeft className="size-4 mr-2" />
@@ -182,7 +182,7 @@ export function UserProfilePage() {
           {profile.isVerifiedStudent && (
             <div className="flex items-center gap-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full border border-blue-500/20 text-xs font-medium">
               <CheckCircle2 className="size-4" />
-              <span>Verified UCB Student</span>
+              <span>Verified Student</span>
             </div>
           )}
 
@@ -214,7 +214,7 @@ export function UserProfilePage() {
                 </p>
               ) : (
                 <div className="py-6 text-center text-muted-foreground text-sm border border-dashed rounded-lg bg-muted/20">
-                  <p>This user hasn't written a bio yet.</p>
+                  <p>This member hasn't written a bio yet.</p>
                 </div>
               )}
             </CardContent>
@@ -321,7 +321,7 @@ export function UserProfilePage() {
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground text-center py-4">
-                  No social profiles linked.
+                  No social profiles linked yet.
                 </p>
               )}
             </CardContent>

@@ -334,7 +334,7 @@ export function CategoriesSidebarCard() {
             </div>
           )}
         </CardHeader>
-        <CardContent className="space-y-1 ">
+        <CardContent className="space-y-1">
           {loading ? (
             <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
               <Loader2 className="size-4 animate-spin" />

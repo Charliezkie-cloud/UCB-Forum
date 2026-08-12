@@ -32,7 +32,7 @@ export function LoginPage() {
       await login({ email, password })
       navigate("/", { replace: true })
     } catch {
-      setError("Unable to sign in. Check your credentials and try again.")
+      setError("We couldn't sign you in. Please check your email and password, then try again.")
     } finally {
       setIsSubmitting(false)
     }
@@ -46,7 +46,7 @@ export function LoginPage() {
           <ShieldCheck className="size-5 text-primary" />
         </div>
         <CardDescription className="text-xs">
-          Access your UCB Forum account to discuss and connect.
+          Welcome back. Sign in to jump into discussions with your classmates and teachers.
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
@@ -128,7 +128,7 @@ export function LoginPage() {
           <p className="text-center text-xs text-muted-foreground pt-1">
             Don't have an account yet?{" "}
             <Link to="/register" className="font-semibold text-primary underline underline-offset-4 hover:text-primary/80">
-              Register now
+              Create one here
             </Link>
           </p>
         </CardFooter>

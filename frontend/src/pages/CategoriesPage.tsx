@@ -27,11 +27,11 @@ export function CategoriesPage() {
               </div>
               <div className="space-y-1 pb-1">
                 <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-                  Forum Categories
+                  Categories
                 </h1>
                 <p className="text-sm text-muted-foreground max-w-xl">
-                  Browse the full category hierarchy for UCB Forum. Select a category
-                  to view its discussions and subcategories.
+                  Browse every discussion space on campus. Select a category to view
+                  its conversations and subcategories.
                 </p>
               </div>
             </div>
@@ -40,7 +40,7 @@ export function CategoriesPage() {
 
         <div className="border-t border-border bg-muted/30 px-6 py-3.5 sm:px-8">
           <p className="text-xs text-muted-foreground">
-            Explore academic departments, course subjects, campus announcements, and student life forums.
+            Pick a category for your topic. You'll find spaces for departments, courses, campus news, and student life.
           </p>
         </div>
       </div>

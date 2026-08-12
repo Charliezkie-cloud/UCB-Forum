@@ -30,7 +30,7 @@ import {
 // User Role Code mapping
 const ROLE_NAMES: Record<number, { name: string; variant: "default" | "secondary" | "outline" | "destructive"; bgClass: string }> = {
   1: { name: "Guest", variant: "outline", bgClass: "border-muted-foreground/30 text-muted-foreground" },
-  2: { name: "UCB Student", variant: "secondary", bgClass: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20" },
+  2: { name: "Student", variant: "secondary", bgClass: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20" },
   3: { name: "Faculty / Teacher", variant: "default", bgClass: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" },
   4: { name: "Moderator", variant: "default", bgClass: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20" },
   5: { name: "Admin", variant: "destructive", bgClass: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20" },
@@ -68,7 +68,7 @@ export function MyProfilePage() {
         initFormData(data)
       } catch (err: unknown) {
         console.error("Failed to load profile", err)
-        setErrorMsg("Failed to load profile details. Please try again.")
+        setErrorMsg("We couldn't load your profile. Please try again.")
       } finally {
         setLoading(false)
       }
@@ -135,7 +135,7 @@ export function MyProfilePage() {
 
       setProfile(updated)
       setIsEditing(false)
-      setSuccessMsg("Your profile was updated successfully!")
+      setSuccessMsg("Your profile is saved.")
     } catch (err: any) {
       console.error("Failed to update profile", err)
       const msg = err.response?.data?.message || "Failed to save profile changes. Please try again."
@@ -149,7 +149,7 @@ export function MyProfilePage() {
     return (
       <div className="flex min-h-[400px] w-full flex-col items-center justify-center gap-3">
         <Loader2 className="size-8 animate-spin text-primary" />
-        <p className="text-sm text-muted-foreground font-medium">Loading your profile...</p>
+        <p className="text-sm text-muted-foreground font-medium">Loading your profile…</p>
       </div>
     )
   }
@@ -160,9 +160,9 @@ export function MyProfilePage() {
         <div className="inline-flex size-12 items-center justify-center rounded-full bg-destructive/10 text-destructive mb-4">
           <AlertCircle className="size-6" />
         </div>
-        <h2 className="text-xl font-bold tracking-tight">Unable to view profile</h2>
+        <h2 className="text-xl font-bold tracking-tight">Profile unavailable</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          {errorMsg || "We couldn't retrieve your profile information."}
+          {errorMsg || "We couldn't load your profile. Try again in a moment."}
         </p>
         <Button className="mt-6" onClick={() => window.location.reload()}>
           Try Again
@@ -269,7 +269,7 @@ export function MyProfilePage() {
             {profile.isVerifiedStudent && (
               <div className="flex items-center gap-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full border border-blue-500/20">
                 <CheckCircle2 className="size-4" />
-                <span>Verified UCB Student</span>
+                <span>Verified Student</span>
               </div>
             )}
 
@@ -320,12 +320,12 @@ export function MyProfilePage() {
                   </p>
                 ) : (
                   <div className="py-6 text-center text-muted-foreground text-sm border border-dashed rounded-lg bg-muted/20">
-                    <p>No bio added yet.</p>
+                    <p>You haven't added a bio yet.</p>
                     <button
                       onClick={handleStartEdit}
                       className="mt-1 text-xs text-primary hover:underline font-medium"
                     >
-                      + Add a short bio
+                      Write a short introduction
                     </button>
                   </div>
                 )}
@@ -433,7 +433,7 @@ export function MyProfilePage() {
                   </div>
                 ) : (
                   <p className="text-xs text-muted-foreground text-center py-4">
-                    No social profiles linked.
+                    No social profiles linked yet.
                   </p>
                 )}
               </CardContent>
@@ -479,7 +479,7 @@ export function MyProfilePage() {
               <span>Edit Your Profile</span>
             </CardTitle>
             <CardDescription>
-              Update your public profile details, social media links, and bio visible to the UCB Forum community.
+              Change what others see on your profile, including your bio and social links.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -503,7 +503,7 @@ export function MyProfilePage() {
                       required
                       value={formData.username}
                       onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                      placeholder="e.g. jdoe_ucb"
+                      placeholder="e.g. alexrivera"
                     />
                   </div>
 
@@ -539,7 +539,7 @@ export function MyProfilePage() {
                     maxLength={500}
                     value={formData.bio || ""}
                     onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                    placeholder="Tell the campus community about yourself..."
+                    placeholder="Tell classmates a bit about yourself..."
                     className="w-full rounded-md border border-input bg-muted/30 px-3 py-2 text-sm shadow-xs focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
                   />
                 </div>
@@ -612,7 +612,7 @@ export function MyProfilePage() {
                       maxLength={100}
                       value={formData.facebook || ""}
                       onChange={(e) => setFormData({ ...formData, facebook: e.target.value })}
-                      placeholder="e.g. charlestinoy"
+                      placeholder="e.g. jane.smith"
                     />
                   </div>
 
@@ -626,7 +626,7 @@ export function MyProfilePage() {
                       maxLength={100}
                       value={formData.instagram || ""}
                       onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
-                      placeholder="e.g. charlestinoy"
+                      placeholder="e.g. janesmith"
                     />
                   </div>
 
@@ -640,7 +640,7 @@ export function MyProfilePage() {
                       maxLength={100}
                       value={formData.twitter || ""}
                       onChange={(e) => setFormData({ ...formData, twitter: e.target.value })}
-                      placeholder="e.g. charlestinoy"
+                      placeholder="e.g. alexrivera"
                     />
                   </div>
 
@@ -654,7 +654,7 @@ export function MyProfilePage() {
                       maxLength={100}
                       value={formData.tiktok || ""}
                       onChange={(e) => setFormData({ ...formData, tiktok: e.target.value })}
-                      placeholder="e.g. charlestinoy"
+                      placeholder="e.g. johndoe_ucb"
                     />
                   </div>
                 </div>

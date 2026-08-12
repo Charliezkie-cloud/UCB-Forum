@@ -202,8 +202,8 @@ export function CategoryFormDialog({
           </DialogTitle>
           <DialogDescription>
             {mode === "create"
-              ? "Add a new forum category. Nest it under a parent to build a hierarchy."
-              : "Update this category’s details, parent, or visibility."}
+              ? "Add a category so posts have a clear home. Put it under a parent category if you need subgroups."
+              : "Change this category's name, parent, visibility, or other details."}
           </DialogDescription>
         </DialogHeader>
 

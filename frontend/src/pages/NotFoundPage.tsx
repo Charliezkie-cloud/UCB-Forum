@@ -23,7 +23,7 @@ export function NotFoundPage() {
               Page Not Found
             </h1>
             <p className="text-xs text-muted-foreground leading-relaxed max-w-xs mx-auto">
-              The campus page or post you are looking for might have been moved, deleted, or doesn't exist.
+              This page isn't here. The link might be wrong, or the page was moved or removed.
             </p>
           </div>
 
@@ -40,7 +40,7 @@ export function NotFoundPage() {
             <Button asChild size="sm" className="w-full sm:w-auto h-9 gap-1.5 text-xs font-semibold shadow-xs">
               <Link to="/">
                 <Home className="size-4" />
-                <span>Return to Home Feed</span>
+                <span>Back to Home</span>
               </Link>
             </Button>
           </div>

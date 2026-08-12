@@ -384,7 +384,7 @@ export function CategoriesTreePanel({ activeSlug = null }: CategoriesTreePanelPr
                 <FolderTree className="mx-auto mb-3 size-10 text-muted-foreground/40" />
                 <p className="text-sm text-muted-foreground">
                   No categories yet.
-                  {canManage ? " Create one to organize forum discussions." : ""}
+                  {canManage ? " Create one to get campus discussions started." : ""}
                 </p>
               </div>
             ) : (

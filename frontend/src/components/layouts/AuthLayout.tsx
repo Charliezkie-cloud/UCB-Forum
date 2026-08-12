@@ -10,16 +10,16 @@ export function AuthLayout() {
             <GraduationCap className="size-6" />
           </div>
           <div className="flex flex-col text-left">
-            <span className="font-heading text-2xl font-bold tracking-tight text-foreground leading-none">
-              UCB <span className="text-primary font-extrabold">Forum</span>
+            <span className="font-heading text-xl font-bold tracking-tight text-foreground leading-none sm:text-2xl">
+              University of Cebu
             </span>
             <span className="text-xs text-muted-foreground font-medium tracking-wider uppercase mt-0.5">
-              University of Cebu Banilad
+              Banilad Campus <span className="text-primary font-semibold normal-case">Forum</span>
             </span>
           </div>
         </Link>
-        <p className="mt-3 text-xs text-muted-foreground max-w-xs">
-          Academic discussions, campus news, and Q&A community portal.
+        <p className="mt-3 text-xs text-muted-foreground max-w-xs leading-relaxed">
+          Talk about classes, campus news, and ask questions with fellow students and faculty.
         </p>
       </div>
 
@@ -28,7 +28,7 @@ export function AuthLayout() {
       </div>
 
       <div className="mt-8 text-center text-[11px] text-muted-foreground">
-        <p>© {new Date().getFullYear()} University of Cebu (Banilad) Forum. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} University of Cebu, Banilad Campus. All rights reserved.</p>
       </div>
     </div>
   )

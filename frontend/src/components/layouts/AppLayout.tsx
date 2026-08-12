@@ -24,11 +24,11 @@ export function AppLayout() {
                 <GraduationCap className="size-5" />
               </div>
               <div className="flex flex-col">
-                <span className="font-heading text-lg font-bold tracking-tight text-foreground leading-none">
-                  UCB <span className="text-primary font-extrabold">Forum</span>
+                <span className="font-heading text-sm font-bold tracking-tight text-foreground leading-none sm:text-base">
+                  University of Cebu
                 </span>
                 <span className="text-[10px] text-muted-foreground font-medium tracking-wider uppercase">
-                  Banilad Campus
+                  Banilad Campus <span className="text-primary font-semibold normal-case">Forum</span>
                 </span>
               </div>
             </Link>
@@ -40,7 +40,7 @@ export function AppLayout() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search UCB Forum, posts, or categories..."
+                placeholder="Search posts, categories, or members..."
                 className="pl-9 pr-12 h-9 bg-muted/40 text-sm border-border/80 focus-visible:bg-background transition-colors"
               />
               <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground sm:flex">
@@ -119,11 +119,11 @@ export function AppLayout() {
       {/* Modern Footer */}
       <footer className="border-t border-border bg-card/30 text-xs text-muted-foreground py-6 mt-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center gap-3">
-          <p>© {new Date().getFullYear()} University of Cebu (Banilad) Community Forum.</p>
+          <p>© {new Date().getFullYear()} University of Cebu, Banilad Campus. All rights reserved.</p>
           <div className="flex items-center gap-4">
-            <a href="#" className="hover:underline hover:text-foreground">Guidelines</a>
-            <a href="#" className="hover:underline hover:text-foreground">Privacy</a>
-            <a href="#" className="hover:underline hover:text-foreground">UCB Portal</a>
+            <a href="#" className="hover:underline hover:text-foreground">Community Guidelines</a>
+            <a href="#" className="hover:underline hover:text-foreground">Privacy Policy</a>
+            <a href="#" className="hover:underline hover:text-foreground">Official Website</a>
           </div>
         </div>
       </footer>

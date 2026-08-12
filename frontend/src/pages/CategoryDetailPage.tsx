@@ -137,7 +137,7 @@ export function CategoryDetailPage() {
         </div>
         <h2 className="text-xl font-bold tracking-tight">Category not found</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          {errorMsg || "We couldn't retrieve this category."}
+          {errorMsg || "This category doesn't exist or may have been removed."}
         </p>
         <div className="mt-6 flex flex-col items-center justify-center gap-2 sm:flex-row">
           <Button variant="outline" onClick={() => navigate(-1)}>
@@ -358,10 +358,10 @@ export function CategoryDetailPage() {
           <div className="rounded-lg border border-dashed bg-muted/20 py-12 text-center">
             <MessageSquare className="mx-auto mb-3 size-8 text-muted-foreground/40" />
             <p className="text-sm font-medium text-muted-foreground">
-              Posts in this category will appear here.
+              Posts in this category will show up here once people start talking.
             </p>
             <p className="mt-1 text-xs text-muted-foreground/80">
-              The post feed for "{category.name}" is coming soon.
+              Nothing in "{category.name}" yet. Be the first to start a thread.
             </p>
           </div>
         </CardContent>
