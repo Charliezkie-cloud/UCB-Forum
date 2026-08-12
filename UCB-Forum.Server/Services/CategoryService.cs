@@ -141,7 +141,7 @@ public class CategoryService
             IconClass = request.IconClass?.Trim(),
             DisplayOrder = request.DisplayOrder,
             IsRestricted = request.IsRestricted,
-            IsPostingAllowed = true,
+            IsPostingAllowed = request.IsPostingAllowed,
             IsActive = request.IsActive
         };
 
@@ -205,6 +205,7 @@ public class CategoryService
         category.IconClass = request.IconClass?.Trim();
         category.DisplayOrder = request.DisplayOrder;
         category.IsRestricted = request.IsRestricted;
+        category.IsPostingAllowed = request.IsPostingAllowed;
         category.IsActive = request.IsActive;
 
         await _db.SaveChangesAsync(cancellationToken);

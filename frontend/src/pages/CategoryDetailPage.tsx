@@ -33,7 +33,7 @@ import {
   getCategoryAncestors,
   getCategoryChildren,
 } from "@/lib/categories"
-import { USER_ROLE } from "@/lib/constants"
+import { canMutatePostsInCategory, isModeratorOrAdmin } from "@/lib/constants"
 import { cn } from "@/lib/utils"
 import type { Category, PagedPostsResponse, Post } from "@/types"
 
@@ -45,9 +45,7 @@ export function CategoryDetailPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
 
-  const canManage =
-    user?.userRoleCode === USER_ROLE.Moderator ||
-    user?.userRoleCode === USER_ROLE.Admin
+  const canManage = isModeratorOrAdmin(user?.userRoleCode)
 
   const pageFromUrl = Math.max(1, Number(searchParams.get("page") || "1") || 1)
 
@@ -264,6 +262,11 @@ export function CategoryDetailPage() {
     day: "numeric",
   })
 
+  const canPost = canMutatePostsInCategory(
+    category.isPostingAllowed,
+    user?.userRoleCode,
+  )
+
   return (
     <div className="mx-auto max-w-5xl space-y-6 pb-10">
       <nav className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
@@ -315,6 +318,15 @@ export function CategoryDetailPage() {
                     >
                       <Lock className="size-3" />
                       Restricted
+                    </Badge>
+                  )}
+                  {!category.isPostingAllowed && (
+                    <Badge
+                      variant="outline"
+                      className="gap-1 border-muted-foreground/30 bg-muted text-muted-foreground"
+                    >
+                      <Lock className="size-3" />
+                      Posting closed
                     </Badge>
                   )}
                   {!category.isActive && canManage && (
@@ -438,6 +450,11 @@ export function CategoryDetailPage() {
                           Restricted
                         </Badge>
                       )}
+                      {!sub.isPostingAllowed && (
+                        <Badge variant="outline" className="h-4 shrink-0 px-1 text-[9px]">
+                          No posting
+                        </Badge>
+                      )}
                     </div>
                     {sub.description && (
                       <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
@@ -465,18 +482,25 @@ export function CategoryDetailPage() {
                 </Badge>
               )}
             </CardTitle>
-            <Button
-              type="button"
-              size="sm"
-              className="h-8 gap-1.5 text-xs"
-              onClick={() => setCreateOpen(true)}
-            >
-              <Plus className="size-3.5" />
-              New post
-            </Button>
+            {canPost && (
+              <Button
+                type="button"
+                size="sm"
+                className="h-8 gap-1.5 text-xs"
+                onClick={() => setCreateOpen(true)}
+              >
+                <Plus className="size-3.5" />
+                New post
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {!canPost && (
+            <p className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/20 px-3 py-2 text-sm text-muted-foreground">
+              Posting is closed in this category. You can still read existing discussions.
+            </p>
+          )}
           {postsLoading && !postsPage ? (
             <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
               <Loader2 className="size-4 animate-spin" />
@@ -499,20 +523,26 @@ export function CategoryDetailPage() {
             <div className="rounded-lg border border-dashed bg-muted/20 py-12 text-center">
               <MessageSquare className="mx-auto mb-3 size-8 text-muted-foreground/40" />
               <p className="text-sm font-medium text-muted-foreground">
-                Posts in this category will show up here once people start talking.
+                {canPost
+                  ? "Posts in this category will show up here once people start talking."
+                  : "No posts in this category yet."}
               </p>
               <p className="mt-1 text-xs text-muted-foreground/80">
-                Nothing in &quot;{category.name}&quot; yet. Be the first to start a thread.
+                {canPost
+                  ? `Nothing in "${category.name}" yet. Be the first to start a thread.`
+                  : "Posting is closed, so new threads cannot be started here."}
               </p>
-              <Button
-                type="button"
-                size="sm"
-                className="mt-4 gap-1.5"
-                onClick={() => setCreateOpen(true)}
-              >
-                <Plus className="size-3.5" />
-                Start a discussion
-              </Button>
+              {canPost && (
+                <Button
+                  type="button"
+                  size="sm"
+                  className="mt-4 gap-1.5"
+                  onClick={() => setCreateOpen(true)}
+                >
+                  <Plus className="size-3.5" />
+                  Start a discussion
+                </Button>
+              )}
             </div>
           ) : (
             <>
@@ -585,13 +615,15 @@ export function CategoryDetailPage() {
         </CardContent>
       </Card>
 
-      <CreatePostDialog
-        open={createOpen}
-        categoryId={category.categoryId}
-        categoryName={category.name}
-        onOpenChange={setCreateOpen}
-        onSuccess={handlePostCreated}
-      />
+      {canPost && (
+        <CreatePostDialog
+          open={createOpen}
+          categoryId={category.categoryId}
+          categoryName={category.name}
+          onOpenChange={setCreateOpen}
+          onSuccess={handlePostCreated}
+        />
+      )}
 
       {canManage && (
         <CategoryFormDialog

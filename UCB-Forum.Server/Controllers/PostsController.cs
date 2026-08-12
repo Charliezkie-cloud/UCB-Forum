@@ -129,6 +129,10 @@ public class PostsController : ControllerBase
             {
                 return NotFound(new { message = error });
             }
+            if (error == "Posting is not allowed in this category.")
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = error });
+            }
             return BadRequest(new { message = error });
         }
 
@@ -163,7 +167,8 @@ public class PostsController : ControllerBase
             {
                 return NotFound(new { message = error });
             }
-            if (error == "You are not authorized to modify this post.")
+            if (error == "You are not authorized to modify this post."
+                || error == "Posting is not allowed in this category.")
             {
                 return StatusCode(StatusCodes.Status403Forbidden, new { message = error });
             }
@@ -196,7 +201,8 @@ public class PostsController : ControllerBase
             {
                 return NotFound(new { message = error });
             }
-            if (error == "You are not authorized to delete this post.")
+            if (error == "You are not authorized to delete this post."
+                || error == "Posting is not allowed in this category.")
             {
                 return StatusCode(StatusCodes.Status403Forbidden, new { message = error });
             }

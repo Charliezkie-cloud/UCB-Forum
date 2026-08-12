@@ -270,6 +270,11 @@ public class PostService
             return (null, "Category not found.");
         }
 
+        if (!CanMutatePostsInCategory(category, callerRoleCode))
+        {
+            return (null, "Posting is not allowed in this category.");
+        }
+
         var content = request.Content.Trim();
         if (string.IsNullOrWhiteSpace(content))
         {
@@ -368,6 +373,11 @@ public class PostService
             return (null, "Post not found.");
         }
 
+        if (!CanMutatePostsInCategory(post.Category, callerRoleCode))
+        {
+            return (null, "Posting is not allowed in this category.");
+        }
+
         var content = request.Content.Trim();
         if (string.IsNullOrWhiteSpace(content))
         {
@@ -431,6 +441,11 @@ public class PostService
         if (!CanAccessCategoryPosts(post.Category, callerRoleCode, isVerified))
         {
             return (false, "Post not found.");
+        }
+
+        if (!CanMutatePostsInCategory(post.Category, callerRoleCode))
+        {
+            return (false, "Posting is not allowed in this category.");
         }
 
         post.IsDeleted = true;
@@ -575,6 +590,11 @@ public class PostService
         }
 
         return true;
+    }
+
+    private static bool CanMutatePostsInCategory(Category category, int callerRoleCode)
+    {
+        return category.IsPostingAllowed || IsModeratorOrAdmin(callerRoleCode);
     }
 
     private static bool IsModeratorOrAdmin(int roleCode)

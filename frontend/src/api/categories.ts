@@ -2,6 +2,7 @@ import apiClient from "@/api/client"
 import type {
   Category,
   CreateCategoryRequest,
+  UpdateCategoryPostingAllowedRequest,
   UpdateCategoryRequest,
 } from "@/types"
 
@@ -35,6 +36,17 @@ export async function updateCategory(
   payload: UpdateCategoryRequest,
 ): Promise<Category> {
   const response = await apiClient.put<Category>(`/categories/${categoryId}`, payload)
+  return response.data
+}
+
+export async function updateCategoryPostingAllowed(
+  categoryId: number,
+  payload: UpdateCategoryPostingAllowedRequest,
+): Promise<Category> {
+  const response = await apiClient.patch<Category>(
+    `/categories/${categoryId}/posting-allowed`,
+    payload,
+  )
   return response.data
 }
 

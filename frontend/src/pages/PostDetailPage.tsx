@@ -32,6 +32,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@/hooks/useAuth"
 import { getApiErrorMessage } from "@/lib/categories"
+import { canMutatePostsInCategory } from "@/lib/constants"
 import type { Category, PagedPostsResponse, Post } from "@/types"
 
 const REPLIES_PAGE_SIZE = 20
@@ -256,6 +257,11 @@ export function PostDetailPage() {
   }
 
   const isAuthor = user?.userId === post.authorId
+  const canMutatePosts = canMutatePostsInCategory(
+    category?.isPostingAllowed,
+    user?.userRoleCode,
+  )
+  const canEditOrDelete = isAuthor && canMutatePosts
   const createdDate = new Date(post.createdAt).toLocaleString(undefined, {
     year: "numeric",
     month: "long",
@@ -322,7 +328,7 @@ export function PostDetailPage() {
             </div>
             {!post.isDeleted && (
               <div className="flex flex-wrap items-center gap-2">
-                {isAuthor && (
+                {canEditOrDelete && (
                   <>
                     <Button
                       type="button"
@@ -404,12 +410,17 @@ export function PostDetailPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {!post.isDeleted && (
+          {!post.isDeleted && canMutatePosts && (
             <ReplyComposer
               categoryId={post.categoryId}
               parentPostId={post.postId}
               onSuccess={handleTopLevelReplyCreated}
             />
+          )}
+          {!post.isDeleted && !canMutatePosts && (
+            <p className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/20 px-3 py-2 text-sm text-muted-foreground">
+              Posting is closed in this category. New replies are disabled.
+            </p>
           )}
           {post.isDeleted && (
             <p className="rounded-lg border border-dashed border-muted-foreground/35 bg-muted/20 px-3 py-2 text-sm text-muted-foreground">
@@ -440,7 +451,9 @@ export function PostDetailPage() {
               <p className="text-sm text-muted-foreground">
                 {post.isDeleted
                   ? "No replies on this deleted post."
-                  : "No replies yet. Be the first to reply."}
+                  : canMutatePosts
+                    ? "No replies yet. Be the first to reply."
+                    : "No replies yet."}
               </p>
             </div>
           ) : (
@@ -451,6 +464,7 @@ export function PostDetailPage() {
                     key={reply.postId}
                     reply={reply}
                     categoryId={post.categoryId}
+                    canMutatePosts={canMutatePosts}
                     onError={setActionError}
                     onReplyDeleted={handleTopLevelReplyDeleted}
                   />
@@ -476,7 +490,7 @@ export function PostDetailPage() {
         </CardContent>
       </Card>
 
-      {isAuthor && (
+      {canEditOrDelete && (
         <EditPostDialog
           open={editOpen}
           post={post}

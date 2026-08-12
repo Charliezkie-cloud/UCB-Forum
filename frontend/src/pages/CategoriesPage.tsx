@@ -41,6 +41,7 @@ export function CategoriesPage() {
         <div className="border-t border-border bg-muted/30 px-6 py-3.5 sm:px-8">
           <p className="text-xs text-muted-foreground">
             Pick a category for your topic. You'll find spaces for departments, courses, campus news, and student life.
+            Categories marked &quot;No posting&quot; are read-only for regular members.
           </p>
         </div>
       </div>

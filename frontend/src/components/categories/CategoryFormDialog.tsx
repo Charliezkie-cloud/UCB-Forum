@@ -38,6 +38,7 @@ interface CategoryFormState {
   displayOrder: string
   parentCategoryId: string
   isRestricted: boolean
+  isPostingAllowed: boolean
   isActive: boolean
   slugTouched: boolean
 }
@@ -59,6 +60,7 @@ function toFormState(
           ? String(defaultParentCategoryId)
           : "",
     isRestricted: category?.isRestricted ?? false,
+    isPostingAllowed: category?.isPostingAllowed ?? true,
     isActive: category?.isActive ?? true,
     slugTouched: Boolean(category?.slug),
   }
@@ -154,6 +156,7 @@ export function CategoryFormDialog({
           displayOrder,
           parentCategoryId,
           isRestricted: form.isRestricted,
+          isPostingAllowed: form.isPostingAllowed,
           isActive: form.isActive,
         }
         const created = await createCategory(payload)
@@ -175,6 +178,7 @@ export function CategoryFormDialog({
           displayOrder,
           parentCategoryId,
           isRestricted: form.isRestricted,
+          isPostingAllowed: form.isPostingAllowed,
           isActive: form.isActive,
         }
         const updated = await updateCategory(category.categoryId, payload)
@@ -291,6 +295,15 @@ export function CategoryFormDialog({
                 }
               />
               Restricted (students+ only)
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <Checkbox
+                checked={form.isPostingAllowed}
+                onCheckedChange={(checked) =>
+                  updateField("isPostingAllowed", checked === true)
+                }
+              />
+              Allow posting
             </label>
             <label className="flex items-center gap-2 text-sm">
               <Checkbox

@@ -5,6 +5,7 @@ export type {
   CategoryTreeNode,
   CreateCategoryRequest,
   UpdateCategoryRequest,
+  UpdateCategoryPostingAllowedRequest,
 } from "@/types/category"
 export type {
   Post,

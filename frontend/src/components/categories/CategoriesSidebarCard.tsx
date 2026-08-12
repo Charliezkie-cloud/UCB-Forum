@@ -37,7 +37,7 @@ import {
   collectExpandableIds,
   getApiErrorMessage,
 } from "@/lib/categories"
-import { USER_ROLE } from "@/lib/constants"
+import { isModeratorOrAdmin } from "@/lib/constants"
 import { cn } from "@/lib/utils"
 import type { Category, CategoryTreeNode } from "@/types"
 
@@ -114,6 +114,17 @@ function CategoryTreeItem({
               Restricted
             </Badge>
           )}
+          {!node.isPostingAllowed && (
+            <Badge
+              variant="outline"
+              className={cn(
+                "h-5 shrink-0 px-1.5 text-[10px]",
+                node.isRestricted ? "ml-1" : "ml-auto",
+              )}
+            >
+              No posting
+            </Badge>
+          )}
         </Link>
 
         {canManage && (
@@ -180,9 +191,7 @@ export function CategoriesSidebarCard() {
     ? pathname.split("/")[2] ?? null
     : null
   const { user } = useAuth()
-  const canManage =
-    user?.userRoleCode === USER_ROLE.Moderator ||
-    user?.userRoleCode === USER_ROLE.Admin
+  const canManage = isModeratorOrAdmin(user?.userRoleCode)
 
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)

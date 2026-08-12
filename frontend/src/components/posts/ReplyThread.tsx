@@ -30,6 +30,7 @@ interface ReplyThreadProps {
   reply: Post
   categoryId: number
   depth?: number
+  canMutatePosts?: boolean
   onError: (message: string) => void
   onReplyDeleted?: () => void
 }
@@ -38,6 +39,7 @@ export function ReplyThread({
   reply: initialReply,
   categoryId,
   depth = 0,
+  canMutatePosts = true,
   onError,
   onReplyDeleted,
 }: ReplyThreadProps) {
@@ -109,6 +111,7 @@ export function ReplyThread({
   ])
 
   const isAuthor = user?.userId === reply.authorId
+  const canEditOrDelete = isAuthor && canMutatePosts
   const busy = liking || deleting
   const replyDate = new Date(reply.createdAt).toLocaleString(undefined, {
     year: "numeric",
@@ -218,7 +221,7 @@ export function ReplyThread({
           </div>
           {!reply.isDeleted && (
             <div className="flex flex-wrap items-center gap-1.5">
-              {isAuthor && (
+              {canEditOrDelete && (
                 <>
                   <Button
                     type="button"
@@ -265,17 +268,19 @@ export function ReplyThread({
                 )}
                 {reply.likesCount}
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-8 gap-1.5"
-                disabled={busy}
-                onClick={() => setShowComposer((open) => !open)}
-              >
-                <MessageSquare className="size-3.5" />
-                Reply
-              </Button>
+              {canMutatePosts && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5"
+                  disabled={busy}
+                  onClick={() => setShowComposer((open) => !open)}
+                >
+                  <MessageSquare className="size-3.5" />
+                  Reply
+                </Button>
+              )}
             </div>
           )}
           {reply.isDeleted && (
@@ -292,7 +297,7 @@ export function ReplyThread({
 
         <PostContent html={reply.content} />
 
-        {showComposer && !reply.isDeleted && (
+        {showComposer && !reply.isDeleted && canMutatePosts && (
           <div className="rounded-lg border border-border/80 bg-muted/20 p-3">
             <ReplyComposer
               categoryId={categoryId}
@@ -356,6 +361,7 @@ export function ReplyThread({
                   reply={child}
                   categoryId={categoryId}
                   depth={depth + 1}
+                  canMutatePosts={canMutatePosts}
                   onError={onError}
                   onReplyDeleted={handleChildDeleted}
                 />
@@ -375,7 +381,7 @@ export function ReplyThread({
         </div>
       )}
 
-      {editing && (
+      {canEditOrDelete && editing && (
         <EditPostDialog
           open={editing}
           post={reply}

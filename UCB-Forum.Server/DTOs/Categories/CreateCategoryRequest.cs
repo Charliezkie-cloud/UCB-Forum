@@ -23,5 +23,7 @@ public class CreateCategoryRequest
 
     public bool IsRestricted { get; set; }
 
+    public bool IsPostingAllowed { get; set; } = true;
+
     public bool IsActive { get; set; } = true;
 }

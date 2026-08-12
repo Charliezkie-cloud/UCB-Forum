@@ -8,6 +8,7 @@ export interface Category {
   iconClass: string | null
   displayOrder: number
   isRestricted: boolean
+  isPostingAllowed: boolean
   isActive: boolean
 }
 
@@ -23,6 +24,7 @@ export interface CreateCategoryRequest {
   iconClass?: string | null
   displayOrder?: number
   isRestricted?: boolean
+  isPostingAllowed?: boolean
   isActive?: boolean
 }
 
@@ -34,5 +36,10 @@ export interface UpdateCategoryRequest {
   iconClass?: string | null
   displayOrder?: number
   isRestricted?: boolean
+  isPostingAllowed?: boolean
   isActive?: boolean
+}
+
+export interface UpdateCategoryPostingAllowedRequest {
+  isPostingAllowed: boolean
 }
