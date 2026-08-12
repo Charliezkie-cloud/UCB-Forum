@@ -4,6 +4,8 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
 import { AppLayout } from "@/components/layouts/AppLayout"
 import { AuthLayout } from "@/components/layouts/AuthLayout"
 import { HomePage } from "@/pages/HomePage"
+import { CategoriesPage } from "@/pages/CategoriesPage"
+import { CategoryDetailPage } from "@/pages/CategoryDetailPage"
 import { MyProfilePage } from "@/pages/MyProfilePage"
 import { UserProfilePage } from "@/pages/UserProfilePage"
 import { NotFoundPage } from "@/pages/NotFoundPage"
@@ -30,6 +32,8 @@ export const router = createBrowserRouter([
         element: <AppLayout />,
         children: [
           { path: "/", element: <HomePage /> },
+          { path: "/categories", element: <CategoriesPage /> },
+          { path: "/categories/:slug", element: <CategoryDetailPage /> },
           { path: "/profile", element: <MyProfilePage /> },
           { path: "/me", element: <MyProfilePage /> },
           { path: "/users/:userId", element: <UserProfilePage /> },
