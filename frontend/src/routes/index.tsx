@@ -6,6 +6,7 @@ import { AuthLayout } from "@/components/layouts/AuthLayout"
 import { HomePage } from "@/pages/HomePage"
 import { CategoriesPage } from "@/pages/CategoriesPage"
 import { CategoryDetailPage } from "@/pages/CategoryDetailPage"
+import { PostDetailPage } from "@/pages/PostDetailPage"
 import { MyProfilePage } from "@/pages/MyProfilePage"
 import { UserProfilePage } from "@/pages/UserProfilePage"
 import { NotFoundPage } from "@/pages/NotFoundPage"
@@ -34,6 +35,7 @@ export const router = createBrowserRouter([
           { path: "/", element: <HomePage /> },
           { path: "/categories", element: <CategoriesPage /> },
           { path: "/categories/:slug", element: <CategoryDetailPage /> },
+          { path: "/posts/:postId", element: <PostDetailPage /> },
           { path: "/profile", element: <MyProfilePage /> },
           { path: "/me", element: <MyProfilePage /> },
           { path: "/users/:userId", element: <UserProfilePage /> },

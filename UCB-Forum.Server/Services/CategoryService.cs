@@ -141,6 +141,7 @@ public class CategoryService
             IconClass = request.IconClass?.Trim(),
             DisplayOrder = request.DisplayOrder,
             IsRestricted = request.IsRestricted,
+            IsPostingAllowed = true,
             IsActive = request.IsActive
         };
 
@@ -206,6 +207,25 @@ public class CategoryService
         category.IsRestricted = request.IsRestricted;
         category.IsActive = request.IsActive;
 
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return (MapToResponse(category), null);
+    }
+
+    public async Task<(CategoryResponse? Response, string? Error)> UpdatePostingAllowedAsync(
+        int categoryId,
+        bool isPostingAllowed,
+        CancellationToken cancellationToken = default)
+    {
+        var category = await _db.Categories
+            .FirstOrDefaultAsync(c => c.CategoryId == categoryId, cancellationToken);
+
+        if (category is null)
+        {
+            return (null, "Category not found.");
+        }
+
+        category.IsPostingAllowed = isPostingAllowed;
         await _db.SaveChangesAsync(cancellationToken);
 
         return (MapToResponse(category), null);
@@ -291,6 +311,7 @@ public class CategoryService
             IconClass = category.IconClass,
             DisplayOrder = category.DisplayOrder,
             IsRestricted = category.IsRestricted,
+            IsPostingAllowed = category.IsPostingAllowed,
             IsActive = category.IsActive
         };
     }

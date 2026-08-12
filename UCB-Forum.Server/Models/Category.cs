@@ -12,6 +12,7 @@ public class Category
     public string? IconClass { get; set; }
     public int DisplayOrder { get; set; }
     public bool IsRestricted { get; set; }
+    public bool IsPostingAllowed { get; set; } = true;
     public bool IsActive { get; set; } = true;
 
     public Category? ParentCategory { get; set; }
