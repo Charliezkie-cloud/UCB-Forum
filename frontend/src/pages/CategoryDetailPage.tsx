@@ -1,29 +1,20 @@
 import { useEffect, useMemo, useState } from "react"
-import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
+import { Link, useNavigate, useParams } from "react-router-dom"
 import {
   AlertCircle,
   ArrowLeft,
   ChevronRight,
   FolderTree,
-  Heart,
   Loader2,
   Lock,
   MessageSquare,
   Pencil,
-  Pin,
   Plus,
   Trash2,
 } from "lucide-react"
 import { deactivateCategory, getCategories, getCategoryBySlug } from "@/api/categories"
-import { getPosts } from "@/api/posts"
 import { CategoryFormDialog } from "@/components/categories/CategoryFormDialog"
 import { CategoryLucideIcon } from "@/components/categories/CategoryLucideIcon"
-import {
-  DeletedGhostBadge,
-  ghostPostClassName,
-} from "@/components/posts/DeletedGhostBadge"
-import { CreatePostDialog } from "@/components/posts/CreatePostDialog"
-import { PostsPagination } from "@/components/posts/PostsPagination"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -34,22 +25,16 @@ import {
   getCategoryChildren,
 } from "@/lib/categories"
 import { USER_ROLE } from "@/lib/constants"
-import { cn } from "@/lib/utils"
-import type { Category, PagedPostsResponse, Post } from "@/types"
-
-const POSTS_PAGE_SIZE = 20
+import type { Category } from "@/types"
 
 export function CategoryDetailPage() {
   const { slug } = useParams<{ slug: string }>()
-  const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
   const { user } = useAuth()
 
   const canManage =
     user?.userRoleCode === USER_ROLE.Moderator ||
     user?.userRoleCode === USER_ROLE.Admin
-
-  const pageFromUrl = Math.max(1, Number(searchParams.get("page") || "1") || 1)
 
   const [category, setCategory] = useState<Category | null>(null)
   const [allCategories, setAllCategories] = useState<Category[]>([])
@@ -59,12 +44,6 @@ export function CategoryDetailPage() {
   const [formMode, setFormMode] = useState<"create" | "edit">("edit")
   const [deleting, setDeleting] = useState(false)
   const [actionError, setActionError] = useState<string | null>(null)
-
-  const [postsPage, setPostsPage] = useState<PagedPostsResponse | null>(null)
-  const [postsLoading, setPostsLoading] = useState(false)
-  const [postsError, setPostsError] = useState<string | null>(null)
-  const [postsReloadKey, setPostsReloadKey] = useState(0)
-  const [createOpen, setCreateOpen] = useState(false)
 
   useEffect(() => {
     async function loadCategory() {
@@ -93,91 +72,6 @@ export function CategoryDetailPage() {
 
     void loadCategory()
   }, [slug])
-
-  useEffect(() => {
-    if (!category) {
-      setPostsPage(null)
-      return
-    }
-
-    let cancelled = false
-
-    async function loadPosts() {
-      try {
-        setPostsLoading(true)
-        setPostsError(null)
-        const data = await getPosts({
-          categoryId: category!.categoryId,
-          page: pageFromUrl,
-          pageSize: POSTS_PAGE_SIZE,
-        })
-        if (cancelled) return
-
-        if (data.totalPages > 0 && pageFromUrl > data.totalPages) {
-          setSearchParams(
-            (prev) => {
-              const next = new URLSearchParams(prev)
-              next.set("page", String(data.totalPages))
-              return next
-            },
-            { replace: true },
-          )
-          return
-        }
-
-        setPostsPage(data)
-      } catch (error: unknown) {
-        if (cancelled) return
-        setPostsError(getApiErrorMessage(error, "Failed to load posts."))
-        setPostsPage(null)
-      } finally {
-        if (!cancelled) setPostsLoading(false)
-      }
-    }
-
-    void loadPosts()
-    return () => {
-      cancelled = true
-    }
-  }, [category, pageFromUrl, postsReloadKey, setSearchParams])
-
-  const setPage = (nextPage: number) => {
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev)
-        if (nextPage <= 1) {
-          next.delete("page")
-        } else {
-          next.set("page", String(nextPage))
-        }
-        return next
-      },
-      { replace: true },
-    )
-  }
-
-  const handlePostCreated = (post: Post) => {
-    setCreateOpen(false)
-    if (pageFromUrl !== 1) {
-      setPage(1)
-      return
-    }
-    setPostsPage((prev) => {
-      if (!prev) {
-        return {
-          items: [post],
-          page: 1,
-          pageSize: POSTS_PAGE_SIZE,
-          totalCount: 1,
-          totalPages: 1,
-        }
-      }
-      const items = [post, ...prev.items].slice(0, prev.pageSize)
-      const totalCount = prev.totalCount + 1
-      const totalPages = Math.max(1, Math.ceil(totalCount / prev.pageSize))
-      return { ...prev, items, totalCount, totalPages }
-    })
-  }
 
   const ancestors = useMemo(() => {
     if (!category) return []
@@ -455,143 +349,23 @@ export function CategoryDetailPage() {
 
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <CardTitle className="flex items-center gap-2 text-base font-semibold">
-              <MessageSquare className="size-4 text-primary" />
-              <span>Discussions</span>
-              {postsPage && postsPage.totalCount > 0 && (
-                <Badge variant="outline" className="ml-1 font-normal">
-                  {postsPage.totalCount}
-                </Badge>
-              )}
-            </CardTitle>
-            <Button
-              type="button"
-              size="sm"
-              className="h-8 gap-1.5 text-xs"
-              onClick={() => setCreateOpen(true)}
-            >
-              <Plus className="size-3.5" />
-              New post
-            </Button>
-          </div>
+          <CardTitle className="flex items-center gap-2 text-base font-semibold">
+            <MessageSquare className="size-4 text-primary" />
+            <span>Discussions</span>
+          </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {postsLoading && !postsPage ? (
-            <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" />
-              Loading posts…
-            </div>
-          ) : postsError ? (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/5 py-8 text-center">
-              <p className="text-sm text-destructive">{postsError}</p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="mt-3"
-                onClick={() => setPostsReloadKey((k) => k + 1)}
-              >
-                Try again
-              </Button>
-            </div>
-          ) : !postsPage || postsPage.items.length === 0 ? (
-            <div className="rounded-lg border border-dashed bg-muted/20 py-12 text-center">
-              <MessageSquare className="mx-auto mb-3 size-8 text-muted-foreground/40" />
-              <p className="text-sm font-medium text-muted-foreground">
-                Posts in this category will show up here once people start talking.
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground/80">
-                Nothing in &quot;{category.name}&quot; yet. Be the first to start a thread.
-              </p>
-              <Button
-                type="button"
-                size="sm"
-                className="mt-4 gap-1.5"
-                onClick={() => setCreateOpen(true)}
-              >
-                <Plus className="size-3.5" />
-                Start a discussion
-              </Button>
-            </div>
-          ) : (
-            <>
-              <ul className="divide-y divide-border rounded-lg border border-border/80">
-                {postsPage.items.map((post) => {
-                  const created = new Date(post.createdAt).toLocaleDateString(undefined, {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                  })
-                  return (
-                    <li
-                      key={post.postId}
-                      className={ghostPostClassName(post.isDeleted)}
-                    >
-                      <Link
-                        to={`/posts/${post.postId}`}
-                        className={cn(
-                          "flex flex-col gap-2 px-4 py-3.5 transition-colors hover:bg-muted/40 sm:flex-row sm:items-center sm:justify-between",
-                          post.isDeleted && "hover:bg-muted/20",
-                        )}
-                      >
-                        <div className="min-w-0 flex-1 space-y-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            {post.isDeleted && <DeletedGhostBadge />}
-                            {post.isPinned && (
-                              <Badge
-                                variant="outline"
-                                className="gap-1 border-primary/30 bg-primary/10 text-primary"
-                              >
-                                <Pin className="size-3" />
-                                Pinned
-                              </Badge>
-                            )}
-                            <p className="truncate text-sm font-semibold text-foreground">
-                              {post.title || "Untitled"}
-                            </p>
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            by {post.authorUsername} · {created}
-                          </p>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
-                          <span className="inline-flex items-center gap-1">
-                            <Heart
-                              className={`size-3.5 ${post.isLikedByCaller ? "fill-current text-destructive" : ""}`}
-                            />
-                            {post.likesCount}
-                          </span>
-                          <span className="inline-flex items-center gap-1">
-                            <MessageSquare className="size-3.5" />
-                            {post.replyCount}
-                          </span>
-                          <ChevronRight className="size-4 text-muted-foreground/70" />
-                        </div>
-                      </Link>
-                    </li>
-                  )
-                })}
-              </ul>
-
-              <PostsPagination
-                page={postsPage.page}
-                totalPages={postsPage.totalPages}
-                disabled={postsLoading}
-                onPageChange={setPage}
-              />
-            </>
-          )}
+        <CardContent>
+          <div className="rounded-lg border border-dashed bg-muted/20 py-12 text-center">
+            <MessageSquare className="mx-auto mb-3 size-8 text-muted-foreground/40" />
+            <p className="text-sm font-medium text-muted-foreground">
+              Posts in this category will show up here once people start talking.
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground/80">
+              Nothing in "{category.name}" yet. Be the first to start a thread.
+            </p>
+          </div>
         </CardContent>
       </Card>
-
-      <CreatePostDialog
-        open={createOpen}
-        categoryId={category.categoryId}
-        categoryName={category.name}
-        onOpenChange={setCreateOpen}
-        onSuccess={handlePostCreated}
-      />
 
       {canManage && (
         <CategoryFormDialog

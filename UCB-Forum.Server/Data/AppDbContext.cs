@@ -165,9 +165,6 @@ public class AppDbContext : DbContext
             entity.Property(e => e.IsRestricted)
                 .HasDefaultValue(false);
 
-            entity.Property(e => e.IsPostingAllowed)
-                .HasDefaultValue(true);
-
             entity.Property(e => e.IsActive)
                 .HasDefaultValue(true);
 

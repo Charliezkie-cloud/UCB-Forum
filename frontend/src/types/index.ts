@@ -6,11 +6,3 @@ export type {
   CreateCategoryRequest,
   UpdateCategoryRequest,
 } from "@/types/category"
-export type {
-  Post,
-  PagedPostsResponse,
-  CreatePostRequest,
-  UpdatePostRequest,
-  LikePostResponse,
-  GetPostsParams,
-} from "@/types/post"

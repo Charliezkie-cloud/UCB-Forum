@@ -12,6 +12,5 @@ public class CategoryResponse
     public string? IconClass { get; set; }
     public int DisplayOrder { get; set; }
     public bool IsRestricted { get; set; }
-    public bool IsPostingAllowed { get; set; }
     public bool IsActive { get; set; }
 }

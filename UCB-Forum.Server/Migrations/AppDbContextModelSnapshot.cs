@@ -51,11 +51,6 @@ namespace UCBForum.Server.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(true);
 
-                    b.Property<bool>("IsPostingAllowed")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(true);
-
                     b.Property<bool>("IsRestricted")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
