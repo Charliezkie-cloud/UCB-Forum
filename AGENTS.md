@@ -1,7 +1,7 @@
 # AGENTS.md — Repository Instructions & Guidelines
 
 ## 1. Project Goal & Overview
-- **Project Name:** UCB Forum
+- **Project Name:** UCB (University of Cebu - Banilad Campus) Forum
 - **Ownership:** Developed solely by Charles Henry M. Tinoy Jr. Use "I" when referring to project updates, docs, or responses.
 - **Core Goal:** To create a dedicated, modern discussion forum for University of Cebu (Banilad) that empowers Guests, Students, and Teachers to share knowledge, ask questions, and build academic and extracurricular communities.
 - **Target Audience:** University students, faculty members, academic staff, and prospective/guest visitors.
@@ -183,6 +183,12 @@ Ref: PostLikes.(PostId, UserId) > (Posts.PostID, Users.UserId) [delete: cascade]
 4. **Directory:** Located in `./src`.
 5. **Language:** TypeScript (`.ts`, `.tsx`). Avoid `any` at all costs.
 6. **Components:** Functional components with TypeScript interface props.
+7. **Website Contents & Form Placeholders:**
+   - **Tone:** Conversational, warm, and direct. Write like you're explaining something to a friend.
+   - **Style:** Use short sentences, active voice, and clear everyday examples.
+   - **Punctuation & Formatting:** Avoid em-dashes (`—`) to prevent robotic tone patterns; use commas, periods, or parentheses instead.
+   - **Banned Words:** Avoid robotic AI fluff and corporate jargon (e.g., *seamless, leverage, delve, synergy, cutting-edge*).
+   - **Form Placeholders:** Use generic, realistic names (e.g., `John Doe`, `Jane Smith`, `Alex Rivera`) or descriptive hints (e.g., `Enter your full name`). **Never use the developer's or owner's real name** as input placeholders or mock data.
 
 ### State & API Fetching
 - Define explicit TypeScript interfaces matching backend DTO responses in `@/types` or `src/types`.
