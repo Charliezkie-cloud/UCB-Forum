@@ -121,6 +121,52 @@ Ref: Categories.ParentCategoryId > Categories.CategoryId [delete: no action]
 Ref: PostLikes.(PostId, UserId) > (Posts.PostID, Users.UserId) [delete: cascade]
 ```
 
+## 4. USERS PERMISSIONS: User Role Code Permissions
+
+- **STRICT PERMISSION:** Do NOT allow users to modify and delete each others table (Except for Moderators and Admin).
+
+### Guest Permissions
+| Operation | Create | Read | Update | Delete
+| --- | --- | --- | --- | --- |
+| Post | Yes | Yes | Yes | Yes |
+| Post (with restricted category) | No | No | No | No |
+| Post (with posting not allowed category) | No | No | No | No |
+| Reply | Yes | Yes | Yes | Yes |
+| Reply (with restricted category) | No | No | No | No |
+| Reply (with posting not allowed category) | No | No | No | No |
+| PostLikes | Yes | Yes | Yes | Yes |
+| PostLikes (with restricted category) | No | No | No | No |
+| PostLikes (with posting not allowed category) | Yes | Yes | Yes | Yes |
+| Categories | No | Yes | No | No |
+
+### UCB-Students and Faculty
+| Operation | Create | Read | Update | Delete
+| --- | --- | --- | --- | --- |
+| Post | Yes | Yes | Yes | Yes |
+| Post (with restricted category) | Yes | Yes | Yes | Yes |
+| Post (with posting not allowed category) | No | No | No | No |
+| Reply | Yes | Yes | Yes | Yes |
+| Reply (with restricted category) | Yes | Yes | Yes | Yes |
+| Reply (with posting not allowed category) | No | No | No | No |
+| PostLikes | Yes | Yes | Yes | Yes |
+| PostLikes (with restricted category) | Yes | Yes | Yes | Yes |
+| PostLikes (with posting not allowed category) | Yes | Yes | Yes | Yes |
+| Categories | No | Yes | No | No |
+
+### Moderators and Admin
+| Operation | Create | Read | Update | Delete
+| --- | --- | --- | --- | --- |
+| Post | Yes | Yes | Yes | Yes |
+| Post (with restricted category) | Yes | Yes | Yes | Yes |
+| Post (with posting not allowed category) | Yes | Yes | Yes | Yes |
+| Reply | Yes | Yes | Yes | Yes |
+| Reply (with restricted category) | Yes | Yes | Yes | Yes |
+| Reply (with posting not allowed category) | Yes | Yes | Yes | Yes |
+| PostLikes | Yes | Yes | Yes | Yes |
+| PostLikes (with restricted category) | Yes | Yes | Yes | Yes |
+| PostLikes (with posting not allowed category) | Yes | Yes | Yes | Yes |
+| Categories | Yes | Yes | Yes | Yes |
+
 ## 4. STRICT RULES: Human-Authored Code Protection
 
 ### 🚨 Zero-Touch & Preservation Mandates
