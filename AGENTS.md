@@ -167,7 +167,7 @@ Ref: PostLikes.(PostId, UserId) > (Posts.PostID, Users.UserId) [delete: cascade]
 | PostLikes (with posting not allowed category) | Yes | Yes | Yes | Yes |
 | Categories | Yes | Yes | Yes | Yes |
 
-## 4. STRICT RULES: Human-Authored Code Protection
+## 5. STRICT RULES: Human-Authored Code Protection
 
 ### 🚨 Zero-Touch & Preservation Mandates
 1. **Respect Human Code Boundaries:** Do NOT overwrite, rewrite, or refactor existing human-written modules, controllers, or components unless explicitly asked to do so in the prompt.
@@ -184,7 +184,7 @@ Ref: PostLikes.(PostId, UserId) > (Posts.PostID, Users.UserId) [delete: cascade]
 
 ---
 
-## 5. General Agent Workflows & Behaviors
+## 6. General Agent Workflows & Behaviors
 - **Align with Project Goals:** Ensure every proposed feature or refactor supports the campus forum's usability, security, and community engagement goals.
 - **Full-Stack Awareness:** Always consider end-to-end data flow (Database -> C# DTO -> API Controller -> TypeScript Type -> React Component/Hook).
 - **Type Safety First:** Ensure model changes in C# backend APIs are mirrored accurately in TypeScript interfaces on the frontend.
@@ -192,7 +192,7 @@ Ref: PostLikes.(PostId, UserId) > (Posts.PostID, Users.UserId) [delete: cascade]
 
 ---
 
-## 6. Backend Guidelines (ASP.NET Core / C#)
+## 7. Backend Guidelines (ASP.NET Core / C#)
 
 ### Architectural & Controller Mandates
 - **MVC API Controllers Mandatory:** All REST API endpoints MUST be implemented using Controller classes deriving from `ControllerBase` in the `Controllers/` directory.
@@ -221,7 +221,7 @@ Ref: PostLikes.(PostId, UserId) > (Posts.PostID, Users.UserId) [delete: cascade]
 
 ---
 
-## 7. Frontend Guidelines (React / TypeScript)
+## 8. Frontend Guidelines (React / TypeScript)
 
 ### Project Setup & UI Conventions
 1. **Routing:** Check for `react-router-dom`. If it does not exist in the frontend project, install and set it up before creating multi-page layouts or navigation routes.
@@ -253,7 +253,7 @@ Ref: PostLikes.(PostId, UserId) > (Posts.PostID, Users.UserId) [delete: cascade]
 
 ---
 
-## 8. Build, Test & Development Commands
+## 9. Build, Test & Development Commands
 
 ### Backend (.NET)
 - Build solution: `dotnet build`
@@ -268,7 +268,7 @@ Ref: PostLikes.(PostId, UserId) > (Posts.PostID, Users.UserId) [delete: cascade]
 
 ---
 
-## 9. Definition of Done for Agents
+## 10. Definition of Done for Agents
 When completing a task, ensure:
 1. All rules in **Section 4 (Human-Authored Code Protection)** were strictly obeyed.
 2. The implementation aligns with the **UCB Forum** project goal outlined in Section 1.
