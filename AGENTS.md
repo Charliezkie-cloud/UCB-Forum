@@ -120,6 +120,24 @@ Table Reputations {
   UpdatedAt DATETIME2 [not null]
 }
 
+Table Notifications {
+  NotificationId INT [pk, increment, unique]
+  UserId INT [not null]
+  RelatedPostId INT [default: null] // Optional deep-link to a post
+  CreatedAt DATETIME2 [not null]
+
+  /*
+  Notification Types:
+    1 - Reply
+    2 - Like
+    3 - Reputation
+  */
+  Type TINYINT [not null]
+
+  Message NVARCHAR(500) [not null]
+  IsRead BIT [default: 0]
+}
+
 // Foreign Key Relationships
 Ref: Profiles.UserId - Users.UserId [delete: cascade, update: cascade]
 Ref: Posts.AuthorId > Users.UserId [delete: no action]
@@ -129,6 +147,8 @@ Ref: Categories.ParentCategoryId > Categories.CategoryId [delete: no action]
 Ref: PostLikes.(PostId, UserId) > (Posts.PostID, Users.UserId) [delete: cascade]
 Ref: Reputations.SourceUserId > Users.UserId [delete: cascade]
 Ref: Reputations.TargetUserId > Users.UserId [delete: no action]
+Ref: Notifications.UserId > Users.UserId [delete: cascade]
+Ref: Notifications.RelatedPostId > Posts.PostID [delete: set null]
 ```
 
 ## 4. USERS PERMISSIONS: User Role Code Permissions
