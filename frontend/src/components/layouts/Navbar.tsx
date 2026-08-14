@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import {
   Bell,
+  CheckCheck,
   CheckCircle2,
   FolderTree,
   GraduationCap,
@@ -12,17 +13,40 @@ import {
   MessageSquare,
   Plus,
   Search,
+  TrendingUp,
   User,
   Users,
   X,
 } from "lucide-react"
+import {
+  getNotifications,
+  markAllNotificationsAsRead,
+  markNotificationAsRead,
+} from "@/api/notifications"
 import { searchAll } from "@/api/search"
 import { CategoryLucideIcon } from "@/components/categories/CategoryLucideIcon"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/hooks/useAuth"
-import type { SearchResultsResponse } from "@/types"
+import type { NotificationResponse, SearchResultsResponse } from "@/types"
+import { NotificationType } from "@/types"
+
+function formatRelativeTime(dateString: string): string {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+
+  if (diffInSeconds < 60) return "Just now"
+  const diffInMinutes = Math.floor(diffInSeconds / 60)
+  if (diffInMinutes < 60) return `${diffInMinutes}m ago`
+  const diffInHours = Math.floor(diffInMinutes / 60)
+  if (diffInHours < 24) return `${diffInHours}h ago`
+  const diffInDays = Math.floor(diffInHours / 24)
+  if (diffInDays < 30) return `${diffInDays}d ago`
+  return date.toLocaleDateString()
+}
+
 
 
 export function Navbar() {
@@ -36,7 +60,14 @@ export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false)
 
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
+  const [notifications, setNotifications] = useState<NotificationResponse[]>([])
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [notificationsLoading, setNotificationsLoading] = useState(false)
+  const [markingAllRead, setMarkingAllRead] = useState(false)
+
   const searchContainerRef = useRef<HTMLDivElement>(null)
+  const notificationsContainerRef = useRef<HTMLDivElement>(null)
   const desktopInputRef = useRef<HTMLInputElement>(null)
   const mobileInputRef = useRef<HTMLInputElement>(null)
 
@@ -44,7 +75,81 @@ export function Navbar() {
   const userDisplayName = user?.email ? user.email.split("@")[0] : "Guest User"
   const userInitial = userDisplayName.charAt(0).toUpperCase()
 
+  // Fetch notifications
+  const fetchNotifications = async () => {
+    if (!user) return
+    try {
+      setNotificationsLoading(true)
+      const data = await getNotifications({ page: 1, pageSize: 20 })
+      setNotifications(data.items)
+      setUnreadCount(data.unreadCount)
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error)
+    } finally {
+      setNotificationsLoading(false)
+    }
+  }
+
+  // Poll notifications when logged in
+  useEffect(() => {
+    if (user) {
+      fetchNotifications()
+      const interval = setInterval(fetchNotifications, 30000)
+      return () => clearInterval(interval)
+    } else {
+      setNotifications([])
+      setUnreadCount(0)
+    }
+  }, [user])
+
+  const toggleNotifications = () => {
+    const nextState = !isNotificationsOpen
+    setIsNotificationsOpen(nextState)
+    if (nextState && user) {
+      fetchNotifications()
+    }
+  }
+
+  const handleNotificationClick = async (notification: NotificationResponse) => {
+    if (!notification.isRead) {
+      try {
+        await markNotificationAsRead(notification.notificationId)
+        setNotifications((prev) =>
+          prev.map((item) =>
+            item.notificationId === notification.notificationId
+              ? { ...item, isRead: true }
+              : item
+          )
+        )
+        setUnreadCount((prev) => Math.max(0, prev - 1))
+      } catch (error) {
+        console.error("Failed to mark notification as read:", error)
+      }
+    }
+
+    setIsNotificationsOpen(false)
+
+    if (notification.relatedPostId) {
+      navigate(`/posts/${notification.relatedPostId}`)
+    }
+  }
+
+  const handleMarkAllAsRead = async () => {
+    if (unreadCount === 0 || markingAllRead) return
+    try {
+      setMarkingAllRead(true)
+      await markAllNotificationsAsRead()
+      setNotifications((prev) => prev.map((item) => ({ ...item, isRead: true })))
+      setUnreadCount(0)
+    } catch (error) {
+      console.error("Failed to mark all notifications as read:", error)
+    } finally {
+      setMarkingAllRead(false)
+    }
+  }
+
   // Debounce user input
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(query.trim())
@@ -98,6 +203,7 @@ export function Navbar() {
       if (event.key === "Escape") {
         setIsOpen(false)
         setIsMobileSearchOpen(false)
+        setIsNotificationsOpen(false)
         desktopInputRef.current?.blur()
       }
     }
@@ -115,11 +221,18 @@ export function Navbar() {
       ) {
         setIsOpen(false)
       }
+      if (
+        notificationsContainerRef.current &&
+        !notificationsContainerRef.current.contains(event.target as Node)
+      ) {
+        setIsNotificationsOpen(false)
+      }
     }
 
     document.addEventListener("mousedown", handleClickOutside)
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
+
 
   const handleSearchSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault()
@@ -424,15 +537,140 @@ export function Navbar() {
             </Link>
           </Button>
 
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="text-muted-foreground hover:text-foreground"
-            title="Notifications"
-          >
-            <Bell className="size-4" />
-            <span className="sr-only">Notifications</span>
-          </Button>
+          {/* Notifications Dropdown Container */}
+          <div ref={notificationsContainerRef} className="relative">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={toggleNotifications}
+              className="relative text-muted-foreground hover:text-foreground"
+              title="Notifications"
+            >
+              <Bell className="size-4" />
+              {user && unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground ring-2 ring-background animate-in zoom-in-50">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+              <span className="sr-only">Notifications</span>
+            </Button>
+
+            {/* Notifications Dropdown Menu */}
+            {isNotificationsOpen && (
+              <div className="absolute right-0 top-full mt-2 z-50 w-80 sm:w-96 rounded-xl border border-border bg-popover text-popover-foreground shadow-lg overflow-hidden animate-in fade-in-0 zoom-in-95 duration-100">
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-border px-4 py-3 bg-muted/30">
+                  <div className="flex items-center gap-2">
+                    <span className="font-heading text-sm font-semibold text-foreground">Notifications</span>
+                    {user && unreadCount > 0 && (
+                      <Badge variant="secondary" className="text-[11px] px-2 py-0.5 rounded-full font-medium">
+                        {unreadCount} new
+                      </Badge>
+                    )}
+                  </div>
+                  {user && unreadCount > 0 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleMarkAllAsRead}
+                      disabled={markingAllRead}
+                      className="text-xs h-7 text-primary hover:text-primary/80 hover:bg-primary/10 gap-1 px-2"
+                    >
+                      {markingAllRead ? (
+                        <Loader2 className="size-3 animate-spin" />
+                      ) : (
+                        <CheckCheck className="size-3.5" />
+                      )}
+                      <span>Mark all as read</span>
+                    </Button>
+                  )}
+                </div>
+
+                {/* Body */}
+                <div className="max-h-[360px] overflow-y-auto divide-y divide-border/50">
+                  {!user ? (
+                    <div className="p-6 text-center">
+                      <Bell className="mx-auto size-8 text-muted-foreground/40 mb-2" />
+                      <p className="text-sm font-semibold text-foreground">Sign in to view notifications</p>
+                      <p className="text-xs text-muted-foreground mt-1 mb-4">
+                        Get real-time updates when someone replies to your post or likes your contribution.
+                      </p>
+                      <Button size="sm" asChild className="w-full">
+                        <Link to="/login" onClick={() => setIsNotificationsOpen(false)}>
+                          Sign In
+                        </Link>
+                      </Button>
+                    </div>
+                  ) : notificationsLoading && notifications.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 text-muted-foreground gap-2">
+                      <Loader2 className="size-5 animate-spin text-primary" />
+                      <span className="text-xs font-medium">Loading notifications...</span>
+                    </div>
+                  ) : notifications.length === 0 ? (
+                    <div className="py-10 text-center px-4">
+                      <CheckCircle2 className="mx-auto mb-2 size-8 text-muted-foreground/40" />
+                      <p className="text-sm font-semibold text-foreground">You're all caught up!</p>
+                      <p className="text-xs text-muted-foreground mt-0.5 max-w-xs mx-auto">
+                        No new notifications right now. Check back later for replies and community activity.
+                      </p>
+                    </div>
+                  ) : (
+                    notifications.map((n) => {
+                      const isUnread = !n.isRead
+                      return (
+                        <button
+                          key={n.notificationId}
+                          type="button"
+                          onClick={() => handleNotificationClick(n)}
+                          className={`w-full flex items-start gap-3 p-3 text-left transition-colors hover:bg-muted/60 relative group ${
+                            isUnread ? "bg-primary/5 font-medium" : "bg-transparent"
+                          }`}
+                        >
+                          <div
+                            className={`mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full border ${
+                              n.type === NotificationType.Reply
+                                ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
+                                : n.type === NotificationType.Like
+                                  ? "bg-rose-500/10 text-rose-500 border-rose-500/20"
+                                  : n.type === NotificationType.Reputation
+                                    ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                                    : "bg-primary/10 text-primary border-primary/20"
+                            }`}
+                          >
+                            {n.type === NotificationType.Reply ? (
+                              <MessageSquare className="size-3.5" />
+                            ) : n.type === NotificationType.Like ? (
+                              <Heart className="size-3.5" />
+                            ) : n.type === NotificationType.Reputation ? (
+                              <TrendingUp className="size-3.5" />
+                            ) : (
+                              <Bell className="size-3.5" />
+                            )}
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-foreground leading-snug break-words">
+                              {n.message}
+                            </p>
+                            <span className="text-[10px] text-muted-foreground mt-1 inline-block">
+                              {formatRelativeTime(n.createdAt)}
+                            </span>
+                          </div>
+
+                          {isUnread && (
+                            <span className="size-2 shrink-0 rounded-full bg-primary mt-1.5" title="Unread" />
+                          )}
+                        </button>
+                      )
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
 
           {user ? (
             <div className="flex items-center gap-2 pl-2 border-l border-border/80">

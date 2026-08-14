@@ -1,4 +1,8 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using UCB_Forum.Server.Authorization;
+using UCB_Forum.Server.Authorization.Requirements;
 using UCB_Forum.Server.Data;
 using UCB_Forum.Server.Dtos.Categories;
 using UCB_Forum.Server.Dtos.Posts;
@@ -11,12 +15,15 @@ namespace UCB_Forum.Server.Services;
 public class SearchService
 {
     private readonly AppDbContext _db;
+    private readonly IAuthorizationService _authorizationService;
+
     private const int MaxPageSize = 100;
     private const int MaxSectionLimit = 20;
 
-    public SearchService(AppDbContext db)
+    public SearchService(AppDbContext db, IAuthorizationService authorizationService)
     {
         _db = db;
+        _authorizationService = authorizationService;
     }
 
     public async Task<SearchResultsResponse> SearchAllAsync(
@@ -96,7 +103,8 @@ public class SearchService
         CancellationToken cancellationToken = default)
     {
         var trimmedQuery = query?.Trim() ?? string.Empty;
-        var canManage = IsModeratorOrAdmin(callerRoleCode);
+        var user = CreateUserPrincipal(callerRoleCode);
+        var canManage = (await _authorizationService.AuthorizeAsync(user, null, ForumPolicies.RequireModeratorOrAdmin)).Succeeded;
         var canViewRestricted = callerRoleCode >= (int)UserRole.Student;
 
         var categoryQuery = _db.Categories.AsNoTracking().AsQueryable();
@@ -187,8 +195,9 @@ public class SearchService
         int callerRoleCode,
         CancellationToken cancellationToken)
     {
+        var user = CreateUserPrincipal(callerRoleCode);
         var isVerified = await IsCallerVerifiedAsync(callerUserId, cancellationToken);
-        var canManage = IsModeratorOrAdmin(callerRoleCode);
+        var canManage = (await _authorizationService.AuthorizeAsync(user, null, ForumPolicies.RequireModeratorOrAdmin)).Succeeded;
 
         IQueryable<Post> query = _db.Posts
             .AsNoTracking()
@@ -202,7 +211,7 @@ public class SearchService
                 .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.CategoryId == categoryId.Value, cancellationToken);
 
-            if (category is null || !CanAccessCategoryPosts(category, callerRoleCode, isVerified))
+            if (category is null || !(await CanAccessCategoryPostsAsync(user, category, isVerified)))
             {
                 return new PagedPostsResponse
                 {
@@ -308,29 +317,21 @@ public class SearchService
         return profile is not null && (profile.IsVerifiedStudent || profile.IsVerifiedTeacher);
     }
 
-    private static bool CanAccessCategoryPosts(Category category, int callerRoleCode, bool isVerified)
+    private async Task<bool> CanAccessCategoryPostsAsync(ClaimsPrincipal user, Category category, bool isVerified)
     {
-        if (IsModeratorOrAdmin(callerRoleCode))
-        {
-            return true;
-        }
-
-        if (!category.IsActive)
-        {
-            return false;
-        }
-
-        if (category.IsRestricted && !isVerified)
-        {
-            return false;
-        }
-
-        return true;
+        var result = await _authorizationService.AuthorizeAsync(user, category, new ViewCategoryRequirement(isVerified));
+        return result.Succeeded;
     }
 
-    private static bool IsModeratorOrAdmin(int roleCode)
+    private static ClaimsPrincipal CreateUserPrincipal(int callerRoleCode)
     {
-        return roleCode == (int)UserRole.Moderator || roleCode == (int)UserRole.Admin;
+        var identity = new ClaimsIdentity(new[]
+        {
+            new Claim("userRoleCode", callerRoleCode.ToString()),
+            new Claim(ClaimTypes.Role, callerRoleCode.ToString())
+        }, "Jwt");
+
+        return new ClaimsPrincipal(identity);
     }
 
     private static PostResponse MapToPostResponse(

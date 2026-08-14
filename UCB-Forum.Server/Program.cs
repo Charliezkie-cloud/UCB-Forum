@@ -2,6 +2,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using UCB_Forum.Server.Authorization;
 using UCB_Forum.Server.Data;
 using UCB_Forum.Server.Options;
 using UCB_Forum.Server.Services;
@@ -40,6 +41,7 @@ builder.Services.AddScoped<CategoryService>();
 builder.Services.AddScoped<PostService>();
 builder.Services.AddScoped<SearchService>();
 builder.Services.AddScoped<ReputationService>();
+builder.Services.AddScoped<NotificationService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -58,7 +60,7 @@ builder.Services
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddForumAuthorization();
 
 var app = builder.Build();
 

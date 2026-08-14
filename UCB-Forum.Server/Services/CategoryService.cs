@@ -1,7 +1,11 @@
 using System.Globalization;
+using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using UCB_Forum.Server.Authorization;
+using UCB_Forum.Server.Authorization.Requirements;
 using UCB_Forum.Server.Data;
 using UCB_Forum.Server.Dtos.Categories;
 using UCB_Forum.Server.Models;
@@ -14,10 +18,12 @@ public class CategoryService
     private static readonly Regex SlugCollapseRegex = new(@"-{2,}", RegexOptions.Compiled);
 
     private readonly AppDbContext _db;
+    private readonly IAuthorizationService _authorizationService;
 
-    public CategoryService(AppDbContext db)
+    public CategoryService(AppDbContext db, IAuthorizationService authorizationService)
     {
         _db = db;
+        _authorizationService = authorizationService;
     }
 
     public async Task<IReadOnlyList<CategoryResponse>> GetCategoriesAsync(
@@ -25,7 +31,9 @@ public class CategoryService
         int? parentCategoryId,
         CancellationToken cancellationToken = default)
     {
-        var canManage = IsModeratorOrAdmin(callerRoleCode);
+        var user = CreateUserPrincipal(callerRoleCode);
+        var canManageAuth = await _authorizationService.AuthorizeAsync(user, null, ForumPolicies.RequireModeratorOrAdmin);
+        var canManage = canManageAuth.Succeeded;
         var canViewRestricted = callerRoleCode >= (int)UserRole.Student;
 
         var query = _db.Categories.AsNoTracking().AsQueryable();
@@ -62,7 +70,14 @@ public class CategoryService
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.CategoryId == categoryId, cancellationToken);
 
-        if (category is null || !CanViewCategory(category, callerRoleCode))
+        if (category is null)
+        {
+            return null;
+        }
+
+        var user = CreateUserPrincipal(callerRoleCode);
+        var authResult = await _authorizationService.AuthorizeAsync(user, category, new ViewCategoryRequirement());
+        if (!authResult.Succeeded)
         {
             return null;
         }
@@ -85,7 +100,14 @@ public class CategoryService
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Slug == normalizedSlug, cancellationToken);
 
-        if (category is null || !CanViewCategory(category, callerRoleCode))
+        if (category is null)
+        {
+            return null;
+        }
+
+        var user = CreateUserPrincipal(callerRoleCode);
+        var authResult = await _authorizationService.AuthorizeAsync(user, category, new ViewCategoryRequirement());
+        if (!authResult.Succeeded)
         {
             return null;
         }
@@ -276,27 +298,15 @@ public class CategoryService
         return null;
     }
 
-    private static bool CanViewCategory(Category category, int callerRoleCode)
+    private static ClaimsPrincipal CreateUserPrincipal(int callerRoleCode)
     {
-        var canManage = IsModeratorOrAdmin(callerRoleCode);
-        var canViewRestricted = callerRoleCode >= (int)UserRole.Student;
-
-        if (!category.IsActive && !canManage)
+        var identity = new ClaimsIdentity(new[]
         {
-            return false;
-        }
+            new Claim("userRoleCode", callerRoleCode.ToString()),
+            new Claim(ClaimTypes.Role, callerRoleCode.ToString())
+        }, "Jwt");
 
-        if (category.IsRestricted && !canViewRestricted && !canManage)
-        {
-            return false;
-        }
-
-        return true;
-    }
-
-    private static bool IsModeratorOrAdmin(int roleCode)
-    {
-        return roleCode == (int)UserRole.Moderator || roleCode == (int)UserRole.Admin;
+        return new ClaimsPrincipal(identity);
     }
 
     private static CategoryResponse MapToResponse(Category category)

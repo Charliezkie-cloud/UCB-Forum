@@ -21,4 +21,5 @@ public class Post
     public Post? ParentPost { get; set; }
     public ICollection<Post> Replies { get; set; } = new List<Post>();
     public ICollection<PostLike> PostLikes { get; set; } = new List<PostLike>();
+    public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 }

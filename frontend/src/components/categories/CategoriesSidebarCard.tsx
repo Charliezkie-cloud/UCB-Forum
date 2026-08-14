@@ -73,7 +73,7 @@ function CategoryTreeItem({
           "group flex items-center gap-1 rounded-lg border border-transparent px-1 py-0.5 transition-colors hover:border-border/60 hover:bg-muted/30",
           isActive && "border-border/80 bg-secondary/60",
         )}
-        style={{ paddingLeft: `${Math.min(depth, 4) * 14 + 4}px` }}
+        style={{ paddingLeft: `${Math.min(depth, 4) * 12 + 2}px` }}
       >
         <Button
           type="button"
@@ -96,7 +96,7 @@ function CategoryTreeItem({
         <Link
           to={`/categories/${node.slug}`}
           className={cn(
-            "flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
+            "flex min-w-0 flex-1 items-center gap-1.5 rounded-md px-1.5 py-1 text-sm transition-colors",
             !node.isActive && "text-muted-foreground/70 line-through",
             isActive
               ? "font-semibold text-foreground"
@@ -185,7 +185,11 @@ function CategoryTreeItem({
   )
 }
 
-export function CategoriesSidebarCard() {
+interface CategoriesSidebarCardProps {
+  className?: string
+}
+
+export function CategoriesSidebarCard({ className }: CategoriesSidebarCardProps = {}) {
   const { pathname } = useLocation()
   const activeSlug = pathname.startsWith("/categories/")
     ? pathname.split("/")[2] ?? null
@@ -298,7 +302,7 @@ export function CategoriesSidebarCard() {
 
   return (
     <>
-      <Card className="overflow-hidden border-border/80 shadow-xs">
+      <Card className={cn("overflow-hidden border-border/80 shadow-xs", className)}>
         <CardHeader className="space-y-3 border-b border-border/60 bg-muted/20 pb-3">
           <div className="flex items-center justify-between gap-2">
             <CardTitle className="flex items-center gap-2 text-sm font-semibold">

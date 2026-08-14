@@ -79,7 +79,7 @@ export function RegisterPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="student@ucb.edu.ph"
+                placeholder="student@uc.edu.ph"
                 autoComplete="email"
                 required
                 value={email}

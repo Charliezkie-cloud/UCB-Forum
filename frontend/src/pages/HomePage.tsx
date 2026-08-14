@@ -84,11 +84,11 @@ export function HomePage() {
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-      <aside className="lg:col-span-3">
+      <aside className="lg:col-span-4">
         <CategoriesSidebarCard />
       </aside>
 
-      <section className="lg:col-span-9">
+      <section className="lg:col-span-8">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base font-semibold">

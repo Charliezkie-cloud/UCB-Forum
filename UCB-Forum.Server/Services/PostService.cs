@@ -1,4 +1,8 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using UCB_Forum.Server.Authorization;
+using UCB_Forum.Server.Authorization.Requirements;
 using UCB_Forum.Server.Data;
 using UCB_Forum.Server.Dtos.Posts;
 using UCB_Forum.Server.Models;
@@ -8,10 +12,12 @@ namespace UCB_Forum.Server.Services;
 public class PostService
 {
     private readonly AppDbContext _db;
+    private readonly IAuthorizationService _authorizationService;
 
-    public PostService(AppDbContext db)
+    public PostService(AppDbContext db, IAuthorizationService authorizationService)
     {
         _db = db;
+        _authorizationService = authorizationService;
     }
 
     private const int MaxPageSize = 100;
@@ -27,8 +33,9 @@ public class PostService
     {
         pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
 
+        var user = CreateUserPrincipal(callerRoleCode);
         var isVerified = await IsCallerVerifiedAsync(callerUserId, cancellationToken);
-        var canManage = IsModeratorOrAdmin(callerRoleCode);
+        var canManage = (await _authorizationService.AuthorizeAsync(user, null, ForumPolicies.RequireModeratorOrAdmin)).Succeeded;
 
         IQueryable<Post> query = _db.Posts
             .AsNoTracking()
@@ -42,7 +49,7 @@ public class PostService
                 .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.CategoryId == categoryId.Value, cancellationToken);
 
-            if (category is null || !CanAccessCategoryPosts(category, callerRoleCode, isVerified))
+            if (category is null || !(await CanAccessCategoryPostsAsync(user, category, isVerified)))
             {
                 return (null, "Category not found.");
             }
@@ -134,8 +141,9 @@ public class PostService
     {
         pageSize = Math.Clamp(pageSize, 1, MaxPageSize);
 
+        var user = CreateUserPrincipal(callerRoleCode);
         var isVerified = await IsCallerVerifiedAsync(callerUserId, cancellationToken);
-        var canManage = IsModeratorOrAdmin(callerRoleCode);
+        var canManage = (await _authorizationService.AuthorizeAsync(user, null, ForumPolicies.RequireModeratorOrAdmin)).Succeeded;
 
         IQueryable<Post> query = _db.Posts
             .AsNoTracking()
@@ -226,14 +234,15 @@ public class PostService
             return null;
         }
 
-        var canManage = IsModeratorOrAdmin(callerRoleCode);
+        var user = CreateUserPrincipal(callerRoleCode);
+        var canManage = (await _authorizationService.AuthorizeAsync(user, null, ForumPolicies.RequireModeratorOrAdmin)).Succeeded;
         if (post.IsDeleted && !canManage)
         {
             return null;
         }
 
         var isVerified = await IsCallerVerifiedAsync(callerUserId, cancellationToken);
-        if (!CanAccessCategoryPosts(post.Category, callerRoleCode, isVerified))
+        if (!(await CanAccessCategoryPostsAsync(user, post.Category, isVerified)))
         {
             return null;
         }
@@ -264,13 +273,14 @@ public class PostService
             return (null, "Category not found.");
         }
 
+        var user = CreateUserPrincipal(callerRoleCode);
         var isVerified = await IsCallerVerifiedAsync(authorId, cancellationToken);
-        if (!CanAccessCategoryPosts(category, callerRoleCode, isVerified))
+        if (!(await CanAccessCategoryPostsAsync(user, category, isVerified)))
         {
             return (null, "Category not found.");
         }
 
-        if (!CanMutatePostsInCategory(category, callerRoleCode))
+        if (!(await CanMutatePostsInCategoryAsync(user, category)))
         {
             return (null, "Posting is not allowed in this category.");
         }
@@ -281,18 +291,19 @@ public class PostService
             return (null, "Content is required.");
         }
 
+        Post? parentPost = null;
         if (request.ParentPostId.HasValue)
         {
-            var parent = await _db.Posts
+            parentPost = await _db.Posts
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.PostId == request.ParentPostId.Value, cancellationToken);
 
-            if (parent is null || parent.IsDeleted)
+            if (parentPost is null || parentPost.IsDeleted)
             {
                 return (null, "Parent post not found.");
             }
 
-            if (parent.CategoryId != request.CategoryId)
+            if (parentPost.CategoryId != request.CategoryId)
             {
                 return (null, "Replies must belong to the same category as the parent post.");
             }
@@ -341,6 +352,26 @@ public class PostService
         post.Author = author;
         post.Category = category;
 
+        if (parentPost is not null && parentPost.AuthorId != authorId)
+        {
+            var replierName = author.Profile?.Username;
+            var message = !string.IsNullOrWhiteSpace(replierName)
+                ? $"{replierName} replied to your post."
+                : "Someone replied to your post.";
+
+            _db.Notifications.Add(new Notification
+            {
+                UserId = parentPost.AuthorId,
+                RelatedPostId = post.PostId,
+                CreatedAt = now,
+                Type = (byte)NotificationType.Reply,
+                Message = message,
+                IsRead = false
+            });
+
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+
         return (MapToResponse(post, replyCount: 0, isLikedByCaller: false, includeDeletedFlag: false), null);
     }
 
@@ -367,13 +398,14 @@ public class PostService
             return (null, "You are not authorized to modify this post.");
         }
 
+        var user = CreateUserPrincipal(callerRoleCode);
         var isVerified = await IsCallerVerifiedAsync(callerUserId, cancellationToken);
-        if (!CanAccessCategoryPosts(post.Category, callerRoleCode, isVerified))
+        if (!(await CanAccessCategoryPostsAsync(user, post.Category, isVerified)))
         {
             return (null, "Post not found.");
         }
 
-        if (!CanMutatePostsInCategory(post.Category, callerRoleCode))
+        if (!(await CanMutatePostsInCategoryAsync(user, post.Category)))
         {
             return (null, "Posting is not allowed in this category.");
         }
@@ -431,19 +463,20 @@ public class PostService
             return (false, "Post not found.");
         }
 
-        var canManage = IsModeratorOrAdmin(callerRoleCode);
+        var user = CreateUserPrincipal(callerRoleCode);
+        var canManage = (await _authorizationService.AuthorizeAsync(user, null, ForumPolicies.RequireModeratorOrAdmin)).Succeeded;
         if (post.AuthorId != callerUserId && !canManage)
         {
             return (false, "You are not authorized to delete this post.");
         }
 
         var isVerified = await IsCallerVerifiedAsync(callerUserId, cancellationToken);
-        if (!CanAccessCategoryPosts(post.Category, callerRoleCode, isVerified))
+        if (!(await CanAccessCategoryPostsAsync(user, post.Category, isVerified)))
         {
             return (false, "Post not found.");
         }
 
-        if (!CanMutatePostsInCategory(post.Category, callerRoleCode))
+        if (!(await CanMutatePostsInCategoryAsync(user, post.Category)))
         {
             return (false, "Posting is not allowed in this category.");
         }
@@ -470,8 +503,9 @@ public class PostService
             return (null, "Post not found.");
         }
 
+        var user = CreateUserPrincipal(callerRoleCode);
         var isVerified = await IsCallerVerifiedAsync(callerUserId, cancellationToken);
-        if (!CanAccessCategoryPosts(post.Category, callerRoleCode, isVerified))
+        if (!(await CanAccessCategoryPostsAsync(user, post.Category, isVerified)))
         {
             return (null, "Post not found.");
         }
@@ -493,6 +527,29 @@ public class PostService
                 });
 
                 post.LikesCount++;
+
+                if (post.AuthorId != callerUserId)
+                {
+                    var callerProfile = await _db.Profiles
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(p => p.UserId == callerUserId, cancellationToken);
+
+                    var likerName = callerProfile?.Username;
+                    var message = !string.IsNullOrWhiteSpace(likerName)
+                        ? $"{likerName} liked your post."
+                        : "Someone liked your post.";
+
+                    _db.Notifications.Add(new Notification
+                    {
+                        UserId = post.AuthorId,
+                        RelatedPostId = postId,
+                        CreatedAt = DateTime.UtcNow,
+                        Type = (byte)NotificationType.Like,
+                        Message = message,
+                        IsRead = false
+                    });
+                }
+
                 await _db.SaveChangesAsync(cancellationToken);
             }
 
@@ -527,8 +584,9 @@ public class PostService
             return (null, "Post not found.");
         }
 
+        var user = CreateUserPrincipal(callerRoleCode);
         var isVerified = await IsCallerVerifiedAsync(callerUserId, cancellationToken);
-        if (!CanAccessCategoryPosts(post.Category, callerRoleCode, isVerified))
+        if (!(await CanAccessCategoryPostsAsync(user, post.Category, isVerified)))
         {
             return (null, "Post not found.");
         }
@@ -572,34 +630,27 @@ public class PostService
         return profile is not null && (profile.IsVerifiedStudent || profile.IsVerifiedTeacher);
     }
 
-    private static bool CanAccessCategoryPosts(Category category, int callerRoleCode, bool isVerified)
+    private async Task<bool> CanAccessCategoryPostsAsync(ClaimsPrincipal user, Category category, bool isVerified)
     {
-        if (IsModeratorOrAdmin(callerRoleCode))
-        {
-            return true;
-        }
-
-        if (!category.IsActive)
-        {
-            return false;
-        }
-
-        if (category.IsRestricted && !isVerified)
-        {
-            return false;
-        }
-
-        return true;
+        var result = await _authorizationService.AuthorizeAsync(user, category, new ViewCategoryRequirement(isVerified));
+        return result.Succeeded;
     }
 
-    private static bool CanMutatePostsInCategory(Category category, int callerRoleCode)
+    private async Task<bool> CanMutatePostsInCategoryAsync(ClaimsPrincipal user, Category category)
     {
-        return category.IsPostingAllowed || IsModeratorOrAdmin(callerRoleCode);
+        var result = await _authorizationService.AuthorizeAsync(user, category, new PostCategoryRequirement());
+        return result.Succeeded;
     }
 
-    private static bool IsModeratorOrAdmin(int roleCode)
+    private static ClaimsPrincipal CreateUserPrincipal(int callerRoleCode)
     {
-        return roleCode == (int)UserRole.Moderator || roleCode == (int)UserRole.Admin;
+        var identity = new ClaimsIdentity(new[]
+        {
+            new Claim("userRoleCode", callerRoleCode.ToString()),
+            new Claim(ClaimTypes.Role, callerRoleCode.ToString())
+        }, "Jwt");
+
+        return new ClaimsPrincipal(identity);
     }
 
     private static PostResponse MapToResponse(

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using UCB_Forum.Server.Authorization;
 using UCB_Forum.Server.Dtos.Categories;
 using UCB_Forum.Server.Models;
 using UCB_Forum.Server.Services;
@@ -86,16 +87,11 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPost]
-    [Authorize]
+    [Authorize(Policy = ForumPolicies.RequireModeratorOrAdmin)]
     public async Task<ActionResult<CategoryResponse>> CreateCategory(
         [FromBody] CreateCategoryRequest request,
         CancellationToken cancellationToken)
     {
-        if (!IsModeratorOrAdmin())
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, new { message = "Moderator or Admin permissions required." });
-        }
-
         var (response, error) = await _categoryService.CreateCategoryAsync(request, cancellationToken);
 
         if (error is not null)
@@ -118,17 +114,12 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPut("{categoryId:int}")]
-    [Authorize]
+    [Authorize(Policy = ForumPolicies.RequireModeratorOrAdmin)]
     public async Task<ActionResult<CategoryResponse>> UpdateCategory(
         [FromRoute] int categoryId,
         [FromBody] UpdateCategoryRequest request,
         CancellationToken cancellationToken)
     {
-        if (!IsModeratorOrAdmin())
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, new { message = "Moderator or Admin permissions required." });
-        }
-
         var (response, error) = await _categoryService.UpdateCategoryAsync(categoryId, request, cancellationToken);
 
         if (error is not null)
@@ -148,17 +139,12 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPatch("{categoryId:int}/posting-allowed")]
-    [Authorize]
+    [Authorize(Policy = ForumPolicies.RequireModeratorOrAdmin)]
     public async Task<ActionResult<CategoryResponse>> UpdatePostingAllowed(
         [FromRoute] int categoryId,
         [FromBody] UpdateCategoryPostingAllowedRequest request,
         CancellationToken cancellationToken)
     {
-        if (!IsModeratorOrAdmin())
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, new { message = "Moderator or Admin permissions required." });
-        }
-
         var (response, error) = await _categoryService.UpdatePostingAllowedAsync(
             categoryId,
             request.IsPostingAllowed,
@@ -177,16 +163,11 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpDelete("{categoryId:int}")]
-    [Authorize]
+    [Authorize(Policy = ForumPolicies.RequireModeratorOrAdmin)]
     public async Task<IActionResult> DeactivateCategory(
         [FromRoute] int categoryId,
         CancellationToken cancellationToken)
     {
-        if (!IsModeratorOrAdmin())
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, new { message = "Moderator or Admin permissions required." });
-        }
-
         var (success, error) = await _categoryService.DeactivateCategoryAsync(categoryId, cancellationToken);
 
         if (!success)
@@ -208,15 +189,5 @@ public class CategoriesController : ControllerBase
             ?? "0";
 
         return int.TryParse(roleValue, out roleCode);
-    }
-
-    private bool IsModeratorOrAdmin()
-    {
-        if (!TryGetRoleCode(out var userRoleCode))
-        {
-            return false;
-        }
-
-        return userRoleCode == (int)UserRole.Moderator || userRoleCode == (int)UserRole.Admin;
     }
 }

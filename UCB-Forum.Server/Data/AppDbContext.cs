@@ -16,6 +16,7 @@ public class AppDbContext : DbContext
     public DbSet<Post> Posts => Set<Post>();
     public DbSet<PostLike> PostLikes => Set<PostLike>();
     public DbSet<Reputation> Reputations => Set<Reputation>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -285,6 +286,44 @@ public class AppDbContext : DbContext
                 .WithMany(u => u.ReceivedReputations)
                 .HasForeignKey(e => e.TargetUserId)
                 .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.ToTable("Notifications");
+            entity.HasKey(e => e.NotificationId);
+
+            entity.Property(e => e.NotificationId)
+                .ValueGeneratedOnAdd();
+
+            entity.Property(e => e.UserId)
+                .IsRequired();
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnType("datetime2")
+                .IsRequired();
+
+            entity.Property(e => e.Type)
+                .HasColumnType("tinyint")
+                .IsRequired();
+
+            entity.Property(e => e.Message)
+                .HasColumnType("nvarchar(500)")
+                .HasMaxLength(500)
+                .IsRequired();
+
+            entity.Property(e => e.IsRead)
+                .HasDefaultValue(false);
+
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.Notifications)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.RelatedPost)
+                .WithMany(p => p.Notifications)
+                .HasForeignKey(e => e.RelatedPostId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

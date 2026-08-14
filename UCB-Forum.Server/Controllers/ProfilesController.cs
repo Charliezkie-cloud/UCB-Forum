@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using UCB_Forum.Server.Authorization;
 using UCB_Forum.Server.Dtos.Profiles;
 using UCB_Forum.Server.Models;
 using UCB_Forum.Server.Services;
@@ -96,17 +97,12 @@ public class ProfilesController : ControllerBase
     }
 
     [HttpPut("{userId:int}/admin")]
-    [Authorize]
+    [Authorize(Policy = ForumPolicies.RequireAdmin)]
     public async Task<ActionResult<ProfileResponse>> AdminUpdateProfile(
         [FromRoute] int userId,
         [FromBody] AdminUpdateProfileRequest request,
         CancellationToken cancellationToken)
     {
-        if (!IsAdmin())
-        {
-            return StatusCode(StatusCodes.Status403Forbidden, new { message = "Admin permissions required." });
-        }
-
         var (response, error) = await _profileService.AdminUpdateProfileAsync(userId, request, cancellationToken);
 
         if (error is not null)
@@ -141,14 +137,5 @@ public class ProfilesController : ControllerBase
             ?? "0";
 
         return int.TryParse(roleValue, out roleCode);
-    }
-
-    private bool IsAdmin()
-    {
-        var roleValue = User.FindFirstValue("userRoleCode")
-            ?? User.FindFirstValue(ClaimTypes.Role)
-            ?? "0";
-
-        return int.TryParse(roleValue, out var userRoleCode) && userRoleCode == (int)UserRole.Admin;
     }
 }

@@ -13,5 +13,6 @@ public class User
     public ICollection<PostLike> PostLikes { get; set; } = new List<PostLike>();
     public ICollection<Reputation> SentReputations { get; set; } = new List<Reputation>();
     public ICollection<Reputation> ReceivedReputations { get; set; } = new List<Reputation>();
+    public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
 }
 

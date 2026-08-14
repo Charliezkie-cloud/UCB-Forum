@@ -29,4 +29,11 @@ export type {
   SearchCategoriesParams,
   SearchProfilesParams,
 } from "@/types/search"
+export type {
+  NotificationResponse,
+  PagedNotificationsResponse,
+  GetNotificationsParams,
+} from "@/types/notification"
+export { NotificationType } from "@/types/notification"
+
 

@@ -102,6 +102,25 @@ public class ReputationService
             targetProfile.UpdatedAt = now;
         }
 
+        var callerProfile = await _db.Profiles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.UserId == callerUserId, cancellationToken);
+
+        var giverName = callerProfile?.Username;
+        var message = isPositive
+            ? (!string.IsNullOrWhiteSpace(giverName) ? $"{giverName} gave you positive reputation." : "Someone gave you positive reputation.")
+            : (!string.IsNullOrWhiteSpace(giverName) ? $"{giverName} gave you negative reputation." : "Someone gave you negative reputation.");
+
+        _db.Notifications.Add(new Notification
+        {
+            UserId = targetUserId,
+            RelatedPostId = null,
+            CreatedAt = now,
+            Type = (byte)NotificationType.Reputation,
+            Message = message,
+            IsRead = false
+        });
+
         await _db.SaveChangesAsync(cancellationToken);
 
         var response = new ReputationResponse
