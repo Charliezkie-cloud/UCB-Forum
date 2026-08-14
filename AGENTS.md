@@ -112,6 +112,14 @@ Table PostLikes {
   CreatedAt DATETIME2 [not null]
 }
 
+Table Reputations {
+  SourceUserId INT [not null]
+  TargetUserId INT [not null]
+  IsPositive BIT [not null]
+  CreatedAt DATETIME2 [not null]
+  UpdatedAt DATETIME2 [not null]
+}
+
 // Foreign Key Relationships
 Ref: Profiles.UserId - Users.UserId [delete: cascade, update: cascade]
 Ref: Posts.AuthorId > Users.UserId [delete: no action]
@@ -119,6 +127,8 @@ Ref: Posts.CategoryId > Categories.CategoryId [delete: cascade]
 Ref: Posts.ParentPostId > Posts.PostID [delete: no action]
 Ref: Categories.ParentCategoryId > Categories.CategoryId [delete: no action]
 Ref: PostLikes.(PostId, UserId) > (Posts.PostID, Users.UserId) [delete: cascade]
+Ref: Reputations.SourceUserId > Users.UserId [delete: cascade]
+Ref: Reputations.TargetUserId > Users.UserId [delete: no action]
 ```
 
 ## 4. USERS PERMISSIONS: User Role Code Permissions
