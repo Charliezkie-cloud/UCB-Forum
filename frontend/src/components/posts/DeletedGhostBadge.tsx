@@ -17,10 +17,14 @@ export function DeletedGhostBadge({ className }: { className?: string }) {
   )
 }
 
-export function ghostPostClassName(isDeleted: boolean, className?: string) {
+export function ghostPostClassName(
+  isDeleted: boolean,
+  className?: string | false | null | undefined,
+) {
   return cn(
     isDeleted &&
       "border-dashed border-muted-foreground/35 bg-muted/25 opacity-70 grayscale-[0.4]",
     className,
   )
 }
+

@@ -40,3 +40,12 @@ export interface UpdateProfileRequest {
   program?: string | null
   yearLevel?: number | null
 }
+
+export interface PagedProfilesResponse {
+  items: Profile[]
+  page: number
+  pageSize: number
+  totalCount: number
+  totalPages: number
+}
+
