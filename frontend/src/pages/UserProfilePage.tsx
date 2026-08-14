@@ -1,10 +1,21 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { getProfileByUserId } from "@/api/profiles"
-import type { Profile } from "@/types"
+import { getReputationStatus, addReputation, downvoteReputation, removeReputation } from "@/api/reputations"
+import type { Profile, ReputationResponse } from "@/types"
+import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import {
   User,
   Mail,
@@ -21,6 +32,9 @@ import {
   Sparkles,
   AlertCircle,
   ArrowLeft,
+  ThumbsUp,
+  ThumbsDown,
+  Minus,
 } from "lucide-react"
 
 const ROLE_NAMES: Record<number, { name: string; bgClass: string }> = {
@@ -34,10 +48,17 @@ const ROLE_NAMES: Record<number, { name: string; bgClass: string }> = {
 export function UserProfilePage() {
   const { userId } = useParams<{ userId: string }>()
   const navigate = useNavigate()
+  const { user: authUser } = useAuth()
 
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
+  const [repStatus, setRepStatus] = useState<ReputationResponse | null>(null)
+  const [repLoading, setRepLoading] = useState(false)
+  const [repActionLoading, setRepActionLoading] = useState(false)
+  const [repError, setRepError] = useState<string | null>(null)
+  const [repDialogOpen, setRepDialogOpen] = useState(false)
 
   useEffect(() => {
     async function loadProfile() {
@@ -63,6 +84,50 @@ export function UserProfilePage() {
 
     void loadProfile()
   }, [userId])
+
+  // Guests (roleCode 1) cannot vote on reputation; owners cannot vote on themselves.
+  const targetUserId = userId ? parseInt(userId, 10) : NaN
+  const canVote =
+    authUser !== null &&
+    authUser.userRoleCode !== 1 &&
+    authUser.userId !== targetUserId
+
+  const loadRepStatus = useCallback(async () => {
+    if (!canVote || isNaN(targetUserId)) return
+    try {
+      setRepLoading(true)
+      const data = await getReputationStatus(targetUserId)
+      setRepStatus(data)
+    } catch {
+      // Non-critical — silently fail
+    } finally {
+      setRepLoading(false)
+    }
+  }, [canVote, targetUserId])
+
+  useEffect(() => {
+    void loadRepStatus()
+  }, [loadRepStatus])
+
+  const handleRepAction = async (action: "upvote" | "downvote" | "remove") => {
+    if (!canVote || isNaN(targetUserId)) return
+    setRepActionLoading(true)
+    setRepError(null)
+    try {
+      let updated: ReputationResponse
+      if (action === "upvote") updated = await addReputation(targetUserId)
+      else if (action === "downvote") updated = await downvoteReputation(targetUserId)
+      else updated = await removeReputation(targetUserId)
+      setRepStatus(updated)
+      setProfile((prev) => prev ? { ...prev, reputation: updated.reputation } : prev)
+      setRepDialogOpen(false)
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } }
+      setRepError(axiosErr.response?.data?.message ?? "Something went wrong. Please try again.")
+    } finally {
+      setRepActionLoading(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -178,6 +243,105 @@ export function UserProfilePage() {
             <Award className="size-4" />
             <span>{profile.reputation} Reputation Points</span>
           </div>
+
+          {/* Reputation Action Button — hidden from Guests and profile owner */}
+          {canVote && (
+            <Dialog open={repDialogOpen} onOpenChange={(open) => { setRepDialogOpen(open); if (!open) setRepError(null) }}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 rounded-full text-xs gap-1.5 border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                  disabled={repLoading}
+                >
+                  {repLoading ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : repStatus?.hasVoted ? (
+                    <>
+                      {repStatus.isPositive ? <ThumbsUp className="size-3.5" /> : <ThumbsDown className="size-3.5" />}
+                      Change Vote
+                    </>
+                  ) : (
+                    <>
+                      <Award className="size-3.5" />
+                      Rate Reputation
+                    </>
+                  )}
+                </Button>
+              </DialogTrigger>
+
+              <DialogContent className="sm:max-w-sm">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <Award className="size-5 text-amber-500" />
+                    Rate {profile.username}&apos;s Reputation
+                  </DialogTitle>
+                  <DialogDescription>
+                    Your vote affects their reputation score on the forum. You can change or retract it any time.
+                  </DialogDescription>
+                </DialogHeader>
+
+                {repError && (
+                  <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-xs text-destructive">
+                    <AlertCircle className="size-3.5 mt-0.5 shrink-0" />
+                    <span>{repError}</span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 gap-2 py-1">
+                  {/* Upvote */}
+                  <Button
+                    variant="outline"
+                    className="justify-start gap-3 h-12 border-green-500/30 hover:bg-green-500/10 hover:text-green-600 hover:border-green-500/50 dark:hover:text-green-400"
+                    onClick={() => void handleRepAction("upvote")}
+                    disabled={repActionLoading || (repStatus?.hasVoted && repStatus.isPositive === true)}
+                  >
+                    {repActionLoading ? <Loader2 className="size-4 animate-spin" /> : <ThumbsUp className="size-4 text-green-500" />}
+                    <div className="text-left">
+                      <p className="text-sm font-medium">Upvote</p>
+                      <p className="text-xs text-muted-foreground">This member contributed positively to the community.</p>
+                    </div>
+                  </Button>
+
+                  {/* Downvote */}
+                  <Button
+                    variant="outline"
+                    className="justify-start gap-3 h-12 border-red-500/30 hover:bg-red-500/10 hover:text-red-600 hover:border-red-500/50 dark:hover:text-red-400"
+                    onClick={() => void handleRepAction("downvote")}
+                    disabled={repActionLoading || (repStatus?.hasVoted && repStatus.isPositive === false)}
+                  >
+                    {repActionLoading ? <Loader2 className="size-4 animate-spin" /> : <ThumbsDown className="size-4 text-red-500" />}
+                    <div className="text-left">
+                      <p className="text-sm font-medium">Downvote</p>
+                      <p className="text-xs text-muted-foreground">This member's behavior was unhelpful or disruptive.</p>
+                    </div>
+                  </Button>
+
+                  {/* Revoke — only visible if already voted */}
+                  {repStatus?.hasVoted && (
+                    <Button
+                      variant="ghost"
+                      className="justify-start gap-3 h-12 text-muted-foreground hover:text-foreground"
+                      onClick={() => void handleRepAction("remove")}
+                      disabled={repActionLoading}
+                    >
+                      {repActionLoading ? <Loader2 className="size-4 animate-spin" /> : <Minus className="size-4" />}
+                      <div className="text-left">
+                        <p className="text-sm font-medium">Revoke Vote</p>
+                        <p className="text-xs text-muted-foreground">Take back your reputation vote.</p>
+                      </div>
+                    </Button>
+                  )}
+                </div>
+
+                <DialogFooter>
+                  <Button variant="ghost" size="sm" onClick={() => { setRepDialogOpen(false); setRepError(null) }}>
+                    Cancel
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
 
           {profile.isVerifiedStudent && (
             <div className="flex items-center gap-1.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 px-3 py-1 rounded-full border border-blue-500/20 text-xs font-medium">

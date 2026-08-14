@@ -20,3 +20,6 @@ export async function updateMyProfile(payload: UpdateProfileRequest): Promise<Pr
   const response = await apiClient.put<Profile>("/profiles/me", payload)
   return response.data
 }
+
+export { addReputation, removeReputation } from "@/api/reputations"
+

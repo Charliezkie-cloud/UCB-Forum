@@ -15,6 +15,7 @@ public class AppDbContext : DbContext
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Post> Posts => Set<Post>();
     public DbSet<PostLike> PostLikes => Set<PostLike>();
+    public DbSet<Reputation> Reputations => Set<Reputation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -252,5 +253,39 @@ public class AppDbContext : DbContext
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+
+        modelBuilder.Entity<Reputation>(entity =>
+        {
+            entity.ToTable("Reputations");
+            entity.HasKey(e => new { e.SourceUserId, e.TargetUserId });
+
+            entity.Property(e => e.SourceUserId)
+                .IsRequired();
+
+            entity.Property(e => e.TargetUserId)
+                .IsRequired();
+
+            entity.Property(e => e.IsPositive)
+                .IsRequired();
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnType("datetime2")
+                .IsRequired();
+
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("datetime2")
+                .IsRequired();
+
+            entity.HasOne(e => e.SourceUser)
+                .WithMany(u => u.SentReputations)
+                .HasForeignKey(e => e.SourceUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.TargetUser)
+                .WithMany(u => u.ReceivedReputations)
+                .HasForeignKey(e => e.TargetUserId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
     }
 }
+

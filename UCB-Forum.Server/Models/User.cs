@@ -11,4 +11,7 @@ public class User
     public Profile? Profile { get; set; }
     public ICollection<Post> Posts { get; set; } = new List<Post>();
     public ICollection<PostLike> PostLikes { get; set; } = new List<PostLike>();
+    public ICollection<Reputation> SentReputations { get; set; } = new List<Reputation>();
+    public ICollection<Reputation> ReceivedReputations { get; set; } = new List<Reputation>();
 }
+

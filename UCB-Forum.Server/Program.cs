@@ -39,6 +39,7 @@ builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<CategoryService>();
 builder.Services.AddScoped<PostService>();
 builder.Services.AddScoped<SearchService>();
+builder.Services.AddScoped<ReputationService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

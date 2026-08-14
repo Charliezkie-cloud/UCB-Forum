@@ -49,3 +49,14 @@ export interface PagedProfilesResponse {
   totalPages: number
 }
 
+export interface ReputationResponse {
+  targetUserId: number
+  reputation: number
+  hasVoted: boolean
+  isPositive: boolean | null
+}
+
+export interface GiveReputationRequest {
+  isPositive: boolean
+}
+

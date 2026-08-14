@@ -4,6 +4,8 @@ export type {
   UserRoleCode,
   UpdateProfileRequest,
   PagedProfilesResponse,
+  ReputationResponse,
+  GiveReputationRequest,
 } from "@/types/user"
 export type { LoginRequest, RegisterRequest, AuthResponse } from "@/types/auth"
 export type {
