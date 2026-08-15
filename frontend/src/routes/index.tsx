@@ -11,6 +11,8 @@ import { MyProfilePage } from "@/pages/MyProfilePage"
 import { UserProfilePage } from "@/pages/UserProfilePage"
 import { NotFoundPage } from "@/pages/NotFoundPage"
 import { SearchPage } from "@/pages/SearchPage"
+import { TermsPage } from "@/pages/TermsPage"
+import { PrivacyPage } from "@/pages/PrivacyPage"
 import { LoginPage } from "@/pages/auth/LoginPage"
 import { RegisterPage } from "@/pages/auth/RegisterPage"
 
@@ -25,6 +27,15 @@ export const router = createBrowserRouter([
           { path: "/register", element: <RegisterPage /> },
         ],
       },
+    ],
+  },
+  {
+    element: <AppLayout />,
+    children: [
+      { path: "/terms", element: <TermsPage /> },
+      { path: "/terms-of-use", element: <TermsPage /> },
+      { path: "/privacy", element: <PrivacyPage /> },
+      { path: "/privacy-policy", element: <PrivacyPage /> },
     ],
   },
   {

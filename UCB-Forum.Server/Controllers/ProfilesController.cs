@@ -121,6 +121,35 @@ public class ProfilesController : ControllerBase
         return NoContent();
     }
 
+    [HttpDelete("me")]
+    [Authorize]
+    public async Task<IActionResult> DeleteMyAccount(
+        [FromBody] DeleteAccountRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized(new { message = "Invalid user identity." });
+        }
+
+        var error = await _profileService.DeleteAccountAsync(userId, request, cancellationToken);
+
+        if (error is not null)
+        {
+            if (error == "Current password is incorrect.")
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = error });
+            }
+            if (error == "User not found.")
+            {
+                return NotFound(new { message = error });
+            }
+            return BadRequest(new { message = error });
+        }
+
+        return NoContent();
+    }
+
     [HttpPut("{userId:int}/admin")]
     [Authorize(Policy = ForumPolicies.RequireAdmin)]
     public async Task<ActionResult<ProfileResponse>> AdminUpdateProfile(

@@ -181,6 +181,100 @@ public class ProfileService
         return null;
     }
 
+    public async Task<string?> DeleteAccountAsync(
+        int callerUserId,
+        DeleteAccountRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await _db.Users
+            .FirstOrDefaultAsync(u => u.UserId == callerUserId, cancellationToken);
+
+        if (user is null)
+        {
+            return "User not found.";
+        }
+
+        if (!PasswordHasher.Verify(request.CurrentPassword, user.Password))
+        {
+            return "Current password is incorrect.";
+        }
+
+        await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
+
+        try
+        {
+            var reputations = await _db.Reputations
+                .Where(r => r.TargetUserId == callerUserId || r.SourceUserId == callerUserId)
+                .ToListAsync(cancellationToken);
+
+            if (reputations.Count > 0)
+            {
+                _db.Reputations.RemoveRange(reputations);
+            }
+
+            var userPostIds = await _db.Posts
+                .Where(p => p.AuthorId == callerUserId)
+                .Select(p => p.PostId)
+                .ToListAsync(cancellationToken);
+
+            if (userPostIds.Count > 0)
+            {
+                var repliesToUserPosts = await _db.Posts
+                    .Where(p => p.ParentPostId != null && userPostIds.Contains(p.ParentPostId.Value) && p.AuthorId != callerUserId)
+                    .ToListAsync(cancellationToken);
+
+                if (repliesToUserPosts.Count > 0)
+                {
+                    _db.Posts.RemoveRange(repliesToUserPosts);
+                }
+
+                var userPosts = await _db.Posts
+                    .Where(p => p.AuthorId == callerUserId)
+                    .ToListAsync(cancellationToken);
+
+                _db.Posts.RemoveRange(userPosts);
+            }
+
+            var likes = await _db.PostLikes
+                .Where(pl => pl.UserId == callerUserId)
+                .ToListAsync(cancellationToken);
+
+            if (likes.Count > 0)
+            {
+                _db.PostLikes.RemoveRange(likes);
+            }
+
+            var notifications = await _db.Notifications
+                .Where(n => n.UserId == callerUserId)
+                .ToListAsync(cancellationToken);
+
+            if (notifications.Count > 0)
+            {
+                _db.Notifications.RemoveRange(notifications);
+            }
+
+            var profile = await _db.Profiles
+                .FirstOrDefaultAsync(p => p.UserId == callerUserId, cancellationToken);
+
+            if (profile is not null)
+            {
+                _db.Profiles.Remove(profile);
+            }
+
+            _db.Users.Remove(user);
+
+            await _db.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+
+            return null;
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+    }
+
     private static ProfileResponse MapToResponse(Profile profile)
     {
         return new ProfileResponse

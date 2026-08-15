@@ -1,12 +1,22 @@
 import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/hooks/useAuth"
-import { getMyProfile, updateMyProfile, changePassword } from "@/api/profiles"
+import { getMyProfile, updateMyProfile, changePassword, deleteMyAccount } from "@/api/profiles"
 import type { Profile, UpdateProfileRequest, ChangePasswordRequest } from "@/types"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import {
   User,
   Shield,
@@ -25,10 +35,12 @@ import {
   MessageSquare,
   Sparkles,
   AlertCircle,
+  AlertTriangle,
   Check,
   KeyRound,
   Eye,
   EyeOff,
+  Trash2,
 } from "lucide-react"
 
 // User Role Code mapping
@@ -41,7 +53,8 @@ const ROLE_NAMES: Record<number, { name: string; variant: "default" | "secondary
 }
 
 export function MyProfilePage() {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -61,6 +74,13 @@ export function MyProfilePage() {
   const [showCurrentPw, setShowCurrentPw] = useState(false)
   const [showNewPw, setShowNewPw] = useState(false)
   const [showConfirmPw, setShowConfirmPw] = useState(false)
+
+  // Delete Account State
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deletePassword, setDeletePassword] = useState("")
+  const [showDeletePassword, setShowDeletePassword] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
 
   // Form State
@@ -184,6 +204,40 @@ export function MyProfilePage() {
       setPwError(msg)
     } finally {
       setPwSaving(false)
+    }
+  }
+
+  const handleOpenDeleteDialog = (open: boolean) => {
+    setDeleteDialogOpen(open)
+    if (!open) {
+      setDeletePassword("")
+      setDeleteError(null)
+      setShowDeletePassword(false)
+    }
+  }
+
+  const handleDeleteAccount = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setDeleteError(null)
+
+    if (!deletePassword) {
+      setDeleteError("Please enter your current password to confirm.")
+      return
+    }
+
+    try {
+      setDeleteLoading(true)
+      await deleteMyAccount({ currentPassword: deletePassword })
+      setDeleteDialogOpen(false)
+      logout()
+      navigate("/login", { replace: true })
+    } catch (err: any) {
+      const msg =
+        err.response?.data?.message ||
+        "Failed to delete account. Please verify your password and try again."
+      setDeleteError(msg)
+    } finally {
+      setDeleteLoading(false)
     }
   }
 
@@ -634,6 +688,107 @@ export function MyProfilePage() {
                     )}
                   </Button>
                 </form>
+              </CardContent>
+            </Card>
+
+            {/* Danger Zone: Delete Account Card */}
+            <Card className="border-destructive/30 bg-destructive/5 dark:bg-destructive/10">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-semibold text-destructive flex items-center gap-2">
+                  <AlertTriangle className="size-4" />
+                  <span>Danger Zone</span>
+                </CardTitle>
+                <CardDescription className="text-xs text-muted-foreground">
+                  Permanently remove your account and all associated profile information.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Once you delete your account, there is no going back. All your data will be permanently removed.
+                </p>
+
+                <Dialog open={deleteDialogOpen} onOpenChange={handleOpenDeleteDialog}>
+                  <DialogTrigger asChild>
+                    <Button variant="destructive" className="w-full gap-2 font-medium">
+                      <Trash2 className="size-4" />
+                      <span>Delete Account</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <div className="flex items-center gap-2 text-destructive font-semibold">
+                        <AlertTriangle className="size-5" />
+                        <DialogTitle>Delete Account</DialogTitle>
+                      </div>
+                      <DialogDescription className="text-xs text-muted-foreground">
+                        This action cannot be undone. To permanently delete your account, please enter your current password.
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    <form onSubmit={handleDeleteAccount} className="space-y-4 pt-1">
+                      <div className="space-y-2">
+                        <Label htmlFor="deletePasswordInput" className="text-xs font-semibold">
+                          Current Password
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            id="deletePasswordInput"
+                            type={showDeletePassword ? "text" : "password"}
+                            required
+                            value={deletePassword}
+                            onChange={(e) => setDeletePassword(e.target.value)}
+                            placeholder="Enter your current password"
+                            className="pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowDeletePassword((v) => !v)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                            aria-label={showDeletePassword ? "Hide password" : "Show password"}
+                          >
+                            {showDeletePassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      {deleteError && (
+                        <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+                          <AlertCircle className="size-4 shrink-0" />
+                          <span>{deleteError}</span>
+                        </div>
+                      )}
+
+                      <DialogFooter className="gap-2 sm:gap-0">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => handleOpenDeleteDialog(false)}
+                          disabled={deleteLoading}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="submit"
+                          variant="destructive"
+                          disabled={deleteLoading}
+                          className="gap-2"
+                        >
+                          {deleteLoading ? (
+                            <>
+                              <Loader2 className="size-4 animate-spin" />
+                              <span>Deleting...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Trash2 className="size-4" />
+                              <span>Permanently Delete</span>
+                            </>
+                          )}
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                  </DialogContent>
+                </Dialog>
               </CardContent>
             </Card>
           </div>

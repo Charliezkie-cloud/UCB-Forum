@@ -1,5 +1,5 @@
 import apiClient from "@/api/client"
-import type { Profile, UpdateProfileRequest, ChangePasswordRequest } from "@/types"
+import type { Profile, UpdateProfileRequest, ChangePasswordRequest, DeleteAccountRequest } from "@/types"
 
 export async function getMyProfile(): Promise<Profile> {
   const response = await apiClient.get<Profile>("/profiles/me")
@@ -23,6 +23,10 @@ export async function updateMyProfile(payload: UpdateProfileRequest): Promise<Pr
 
 export async function changePassword(payload: ChangePasswordRequest): Promise<void> {
   await apiClient.put("/profiles/me/password", payload)
+}
+
+export async function deleteMyAccount(payload: DeleteAccountRequest): Promise<void> {
+  await apiClient.delete("/profiles/me", { data: payload })
 }
 
 export { addReputation, removeReputation } from "@/api/reputations"

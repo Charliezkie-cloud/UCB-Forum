@@ -7,6 +7,7 @@ export type {
   ReputationResponse,
   GiveReputationRequest,
   ChangePasswordRequest,
+  DeleteAccountRequest,
 } from "@/types/user"
 export type { LoginRequest, RegisterRequest, AuthResponse } from "@/types/auth"
 export type {

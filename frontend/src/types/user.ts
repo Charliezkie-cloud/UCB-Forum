@@ -65,3 +65,8 @@ export interface ChangePasswordRequest {
   confirmNewPassword: string
 }
 
+export interface DeleteAccountRequest {
+  currentPassword: string
+}
+
+

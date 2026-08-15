@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/hooks/useAuth"
@@ -21,6 +22,7 @@ export function RegisterPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [agreeTerms, setAgreeTerms] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -29,6 +31,11 @@ export function RegisterPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
+
+    if (!agreeTerms) {
+      setError("Please agree to the Terms of Use to create an account.")
+      return
+    }
 
     if (password !== confirmPassword) {
       setError("Passwords do not match.")
@@ -149,6 +156,29 @@ export function RegisterPage() {
             </div>
           </div>
 
+          <div className="flex items-start space-x-2 pt-1">
+            <Checkbox
+              id="terms"
+              checked={agreeTerms}
+              onCheckedChange={(checked) => setAgreeTerms(checked === true)}
+            />
+            <Label
+              htmlFor="terms"
+              className="text-xs text-muted-foreground font-normal leading-snug cursor-pointer select-none"
+            >
+              I agree to the{" "}
+              <Link
+                to="/terms"
+                target="_blank"
+                rel="noreferrer"
+                className="font-medium text-primary underline underline-offset-4 hover:text-primary/80"
+              >
+                Terms of Use
+              </Link>
+              .
+            </Label>
+          </div>
+
           {error ? (
             <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs font-medium">
               <AlertCircle className="size-4 shrink-0" />
@@ -161,7 +191,7 @@ export function RegisterPage() {
           <Button
             type="submit"
             className="w-full h-10 font-semibold shadow-sm text-sm"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !agreeTerms}
           >
             {isSubmitting ? (
               <>
