@@ -20,17 +20,25 @@ export function RegisterPage() {
   const [username, setUsername] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.")
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
-      await register({ username, email, password })
+      await register({ username, email, password, confirmPassword })
       navigate("/", { replace: true })
     } catch {
       setError("We couldn't create your account. Please check your details and try again.")
@@ -98,7 +106,7 @@ export function RegisterPage() {
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
-                placeholder="At least 6 characters"
+                placeholder="At least 8 characters"
                 autoComplete="new-password"
                 required
                 value={password}
@@ -111,6 +119,32 @@ export function RegisterPage() {
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword" className="text-xs font-semibold">
+              Confirm Password
+            </Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Input
+                id="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm your password"
+                autoComplete="new-password"
+                required
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                className="pl-9 pr-9 h-10 text-sm bg-background border-border/80 focus-visible:ring-2"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
               </button>
             </div>
           </div>

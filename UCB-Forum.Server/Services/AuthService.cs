@@ -23,6 +23,11 @@ public class AuthService
         var email = request.Email.Trim().ToLowerInvariant();
         var username = request.Username.Trim();
 
+        if (request.Password != request.ConfirmPassword)
+        {
+            return (null, "Passwords do not match.");
+        }
+
         var emailExists = await _db.Users
             .AnyAsync(u => u.Email == email, cancellationToken);
 

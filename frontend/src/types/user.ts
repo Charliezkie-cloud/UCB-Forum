@@ -10,7 +10,6 @@ export interface User {
 export interface Profile {
   profileId: number
   userId: number
-  email: string
   userRoleCode: number
   createdAt: string
   updatedAt: string

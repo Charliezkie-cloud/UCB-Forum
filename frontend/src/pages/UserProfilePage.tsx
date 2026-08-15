@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/dialog"
 import {
   User,
-  Mail,
   Shield,
   Award,
   CheckCircle2,
@@ -222,10 +221,6 @@ export function UserProfilePage() {
                 </div>
 
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Mail className="size-3.5" />
-                    <span>{profile.email}</span>
-                  </div>
                   <div className="flex items-center gap-1">
                     <Calendar className="size-3.5" />
                     <span>Joined {joinedDate}</span>

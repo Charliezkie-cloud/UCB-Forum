@@ -25,6 +25,11 @@ public class AuthController : ControllerBase
         [FromBody] RegisterRequest request,
         CancellationToken cancellationToken)
     {
+        if (request.Password != request.ConfirmPassword)
+        {
+            return BadRequest(new { message = "Passwords do not match." });
+        }
+
         var (response, error) = await _authService.RegisterAsync(request, cancellationToken);
 
         if (error is not null)

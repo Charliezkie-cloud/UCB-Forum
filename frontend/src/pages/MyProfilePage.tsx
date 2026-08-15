@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { useAuth } from "@/hooks/useAuth"
 import { getMyProfile, updateMyProfile, changePassword } from "@/api/profiles"
 import type { Profile, UpdateProfileRequest, ChangePasswordRequest } from "@/types"
 import { Button } from "@/components/ui/button"
@@ -12,6 +13,7 @@ import {
   Award,
   CheckCircle2,
   Calendar,
+  Mail,
   Edit3,
   Save,
   X,
@@ -39,6 +41,7 @@ const ROLE_NAMES: Record<number, { name: string; variant: "default" | "secondary
 }
 
 export function MyProfilePage() {
+  const { user } = useAuth()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -270,6 +273,12 @@ export function MyProfilePage() {
                     <Calendar className="size-3.5" />
                     <span>Joined {joinedDate}</span>
                   </div>
+                  {user?.email && (
+                    <div className="flex items-center gap-1">
+                      <Mail className="size-3.5" />
+                      <span>{user.email}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

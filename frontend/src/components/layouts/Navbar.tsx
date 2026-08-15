@@ -470,7 +470,7 @@ export function Navbar() {
                                       ? prof.department || "Faculty Member"
                                       : prof.isVerifiedStudent
                                         ? prof.program || "Student"
-                                        : "Campus Member"}
+                                        : "Forum Member"}
                                   </p>
                                 </div>
                               </div>
