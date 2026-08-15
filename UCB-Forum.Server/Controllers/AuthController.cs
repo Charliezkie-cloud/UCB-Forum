@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using UCB_Forum.Server.Dtos.Auth;
 using UCB_Forum.Server.Services;
 
@@ -8,6 +9,7 @@ namespace UCB_Forum.Server.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting(RateLimitingExtensions.AuthPolicyName)]
 public class AuthController : ControllerBase
 {
     private readonly AuthService _authService;

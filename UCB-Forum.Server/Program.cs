@@ -2,6 +2,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using UCB_Forum.Server;
 using UCB_Forum.Server.Authorization;
 using UCB_Forum.Server.Data;
 using UCB_Forum.Server.Options;
@@ -61,6 +62,7 @@ builder.Services
     });
 
 builder.Services.AddForumAuthorization();
+builder.Services.AddForumRateLimiting(builder.Configuration);
 
 var app = builder.Build();
 
@@ -76,6 +78,7 @@ app.MapDefaultEndpoints();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapControllers();
 app.UseFileServer();
