@@ -385,7 +385,6 @@ public class SearchService
         {
             ProfileId = profile.ProfileId,
             UserId = profile.UserId,
-            Email = profile.User?.Email ?? string.Empty,
             UserRoleCode = profile.User?.UserRoleCode ?? (int)UserRole.Guest,
             CreatedAt = profile.CreatedAt,
             UpdatedAt = profile.UpdatedAt,

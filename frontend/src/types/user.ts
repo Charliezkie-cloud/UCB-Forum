@@ -60,3 +60,9 @@ export interface GiveReputationRequest {
   isPositive: boolean
 }
 
+export interface ChangePasswordRequest {
+  currentPassword: string
+  newPassword: string
+  confirmNewPassword: string
+}
+

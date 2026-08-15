@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
-import { getMyProfile, updateMyProfile } from "@/api/profiles"
-import type { Profile, UpdateProfileRequest } from "@/types"
+import { getMyProfile, updateMyProfile, changePassword } from "@/api/profiles"
+import type { Profile, UpdateProfileRequest, ChangePasswordRequest } from "@/types"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import {
   User,
-  Mail,
   Shield,
   Award,
   CheckCircle2,
@@ -25,6 +24,9 @@ import {
   Sparkles,
   AlertCircle,
   Check,
+  KeyRound,
+  Eye,
+  EyeOff,
 } from "lucide-react"
 
 // User Role Code mapping
@@ -43,6 +45,20 @@ export function MyProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
+
+  // Change Password State
+  const [pwForm, setPwForm] = useState<ChangePasswordRequest>({
+    currentPassword: "",
+    newPassword: "",
+    confirmNewPassword: "",
+  })
+  const [pwSaving, setPwSaving] = useState(false)
+  const [pwError, setPwError] = useState<string | null>(null)
+  const [pwSuccess, setPwSuccess] = useState<string | null>(null)
+  const [showCurrentPw, setShowCurrentPw] = useState(false)
+  const [showNewPw, setShowNewPw] = useState(false)
+  const [showConfirmPw, setShowConfirmPw] = useState(false)
+
 
   // Form State
   const [formData, setFormData] = useState<UpdateProfileRequest>({
@@ -145,6 +161,29 @@ export function MyProfilePage() {
     }
   }
 
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setPwError(null)
+    setPwSuccess(null)
+
+    if (pwForm.newPassword !== pwForm.confirmNewPassword) {
+      setPwError("New password and confirmation do not match.")
+      return
+    }
+
+    try {
+      setPwSaving(true)
+      await changePassword(pwForm)
+      setPwForm({ currentPassword: "", newPassword: "", confirmNewPassword: "" })
+      setPwSuccess("Password updated successfully.")
+    } catch (err: any) {
+      const msg = err.response?.data?.message || "Failed to update password. Please try again."
+      setPwError(msg)
+    } finally {
+      setPwSaving(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-[400px] w-full flex-col items-center justify-center gap-3">
@@ -227,10 +266,6 @@ export function MyProfilePage() {
                 </div>
 
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Mail className="size-3.5" />
-                    <span>{profile.email}</span>
-                  </div>
                   <div className="flex items-center gap-1">
                     <Calendar className="size-3.5" />
                     <span>Joined {joinedDate}</span>
@@ -466,6 +501,130 @@ export function MyProfilePage() {
                     {new Date(profile.updatedAt).toLocaleDateString()}
                   </span>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Change Password Card */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <KeyRound className="size-4 text-primary" />
+                  <span>Change Password</span>
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Keep your account secure by using a strong password.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handlePasswordChange} className="space-y-4">
+                  {/* Current Password */}
+                  <div className="space-y-2">
+                    <Label htmlFor="currentPassword" className="text-xs font-semibold">
+                      Current Password
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="currentPassword"
+                        type={showCurrentPw ? "text" : "password"}
+                        required
+                        value={pwForm.currentPassword}
+                        onChange={(e) => setPwForm({ ...pwForm, currentPassword: e.target.value })}
+                        placeholder="Enter your current password"
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrentPw((v) => !v)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        aria-label={showCurrentPw ? "Hide password" : "Show password"}
+                      >
+                        {showCurrentPw ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* New Password */}
+                  <div className="space-y-2">
+                    <Label htmlFor="newPassword" className="text-xs font-semibold">
+                      New Password
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="newPassword"
+                        type={showNewPw ? "text" : "password"}
+                        required
+                        minLength={8}
+                        value={pwForm.newPassword}
+                        onChange={(e) => setPwForm({ ...pwForm, newPassword: e.target.value })}
+                        placeholder="At least 8 characters"
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPw((v) => !v)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        aria-label={showNewPw ? "Hide password" : "Show password"}
+                      >
+                        {showNewPw ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Confirm New Password */}
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmNewPassword" className="text-xs font-semibold">
+                      Confirm New Password
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="confirmNewPassword"
+                        type={showConfirmPw ? "text" : "password"}
+                        required
+                        minLength={8}
+                        value={pwForm.confirmNewPassword}
+                        onChange={(e) => setPwForm({ ...pwForm, confirmNewPassword: e.target.value })}
+                        placeholder="Repeat your new password"
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPw((v) => !v)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        aria-label={showConfirmPw ? "Hide password" : "Show password"}
+                      >
+                        {showConfirmPw ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Feedback */}
+                  {pwError && (
+                    <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+                      <AlertCircle className="size-4 shrink-0" />
+                      <span>{pwError}</span>
+                    </div>
+                  )}
+                  {pwSuccess && (
+                    <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-600 dark:text-emerald-400">
+                      <Check className="size-4 shrink-0" />
+                      <span>{pwSuccess}</span>
+                    </div>
+                  )}
+
+                  <Button type="submit" disabled={pwSaving} className="w-full gap-2">
+                    {pwSaving ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin" />
+                        <span>Updating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <KeyRound className="size-4" />
+                        <span>Update Password</span>
+                      </>
+                    )}
+                  </Button>
+                </form>
               </CardContent>
             </Card>
           </div>

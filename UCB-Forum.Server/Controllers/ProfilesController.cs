@@ -96,6 +96,31 @@ public class ProfilesController : ControllerBase
         return Ok(response);
     }
 
+    [HttpPut("me/password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword(
+        [FromBody] ChangePasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized(new { message = "Invalid user identity." });
+        }
+
+        var error = await _profileService.ChangePasswordAsync(userId, request, cancellationToken);
+
+        if (error is not null)
+        {
+            if (error == "Current password is incorrect.")
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = error });
+            }
+            return BadRequest(new { message = error });
+        }
+
+        return NoContent();
+    }
+
     [HttpPut("{userId:int}/admin")]
     [Authorize(Policy = ForumPolicies.RequireAdmin)]
     public async Task<ActionResult<ProfileResponse>> AdminUpdateProfile(

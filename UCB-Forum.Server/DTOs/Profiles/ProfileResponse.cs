@@ -4,7 +4,6 @@ public class ProfileResponse
 {
     public int ProfileId { get; set; }
     public int UserId { get; set; }
-    public string Email { get; set; } = string.Empty;
     public int UserRoleCode { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

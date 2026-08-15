@@ -6,6 +6,7 @@ export type {
   PagedProfilesResponse,
   ReputationResponse,
   GiveReputationRequest,
+  ChangePasswordRequest,
 } from "@/types/user"
 export type { LoginRequest, RegisterRequest, AuthResponse } from "@/types/auth"
 export type {

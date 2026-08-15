@@ -151,13 +151,42 @@ public class ProfileService
         return (MapToResponse(profile), null);
     }
 
+    public async Task<string?> ChangePasswordAsync(
+        int callerUserId,
+        ChangePasswordRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await _db.Users
+            .FirstOrDefaultAsync(u => u.UserId == callerUserId, cancellationToken);
+
+        if (user is null)
+        {
+            return "User not found.";
+        }
+
+        if (!PasswordHasher.Verify(request.CurrentPassword, user.Password))
+        {
+            return "Current password is incorrect.";
+        }
+
+        if (request.NewPassword != request.ConfirmNewPassword)
+        {
+            return "New password and confirmation do not match.";
+        }
+
+        user.Password = PasswordHasher.Hash(request.NewPassword);
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return null;
+    }
+
     private static ProfileResponse MapToResponse(Profile profile)
     {
         return new ProfileResponse
         {
             ProfileId = profile.ProfileId,
             UserId = profile.UserId,
-            Email = profile.User?.Email ?? string.Empty,
             UserRoleCode = profile.User?.UserRoleCode ?? (int)UserRole.Guest,
             CreatedAt = profile.CreatedAt,
             UpdatedAt = profile.UpdatedAt,

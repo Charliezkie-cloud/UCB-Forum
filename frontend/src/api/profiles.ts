@@ -1,5 +1,5 @@
 import apiClient from "@/api/client"
-import type { Profile, UpdateProfileRequest } from "@/types"
+import type { Profile, UpdateProfileRequest, ChangePasswordRequest } from "@/types"
 
 export async function getMyProfile(): Promise<Profile> {
   const response = await apiClient.get<Profile>("/profiles/me")
@@ -21,5 +21,10 @@ export async function updateMyProfile(payload: UpdateProfileRequest): Promise<Pr
   return response.data
 }
 
+export async function changePassword(payload: ChangePasswordRequest): Promise<void> {
+  await apiClient.put("/profiles/me/password", payload)
+}
+
 export { addReputation, removeReputation } from "@/api/reputations"
+
 
