@@ -105,8 +105,11 @@ export function Navbar() {
   const toggleNotifications = () => {
     const nextState = !isNotificationsOpen
     setIsNotificationsOpen(nextState)
-    if (nextState && user) {
-      fetchNotifications()
+    if (nextState) {
+      setIsMobileSearchOpen(false)
+      if (user) {
+        fetchNotifications()
+      }
     }
   }
 
@@ -516,6 +519,7 @@ export function Navbar() {
             className="md:hidden text-muted-foreground hover:text-foreground"
             onClick={() => {
               setIsMobileSearchOpen(!isMobileSearchOpen)
+              setIsNotificationsOpen(false)
               if (!isMobileSearchOpen) {
                 setTimeout(() => mobileInputRef.current?.focus(), 100)
               }
@@ -558,7 +562,7 @@ export function Navbar() {
 
             {/* Notifications Dropdown Menu */}
             {isNotificationsOpen && (
-              <div className="absolute right-0 top-full mt-2 z-50 w-80 sm:w-96 rounded-xl border border-border bg-popover text-popover-foreground shadow-lg overflow-hidden animate-in fade-in-0 zoom-in-95 duration-100">
+              <div className="fixed inset-x-2 top-[68px] sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 z-50 w-auto sm:w-96 rounded-xl border border-border bg-popover text-popover-foreground shadow-xl sm:shadow-lg overflow-hidden animate-in fade-in-0 zoom-in-95 duration-100">
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-border px-4 py-3 bg-muted/30">
                   <div className="flex items-center gap-2">
@@ -589,7 +593,7 @@ export function Navbar() {
                 </div>
 
                 {/* Body */}
-                <div className="max-h-[360px] overflow-y-auto divide-y divide-border/50">
+                <div className="max-h-[calc(100vh-140px)] sm:max-h-[360px] overflow-y-auto divide-y divide-border/50">
                   {!user ? (
                     <div className="p-6 text-center">
                       <Bell className="mx-auto size-8 text-muted-foreground/40 mb-2" />
