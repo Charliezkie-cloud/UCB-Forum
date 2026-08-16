@@ -15,6 +15,7 @@ import { TermsPage } from "@/pages/TermsPage"
 import { PrivacyPage } from "@/pages/PrivacyPage"
 import { LoginPage } from "@/pages/auth/LoginPage"
 import { RegisterPage } from "@/pages/auth/RegisterPage"
+import { ForgotPasswordPage } from "@/pages/auth/ForgotPasswordPage"
 
 export const router = createBrowserRouter([
   {
@@ -25,6 +26,7 @@ export const router = createBrowserRouter([
         children: [
           { path: "/login", element: <LoginPage /> },
           { path: "/register", element: <RegisterPage /> },
+          { path: "/forgot-password", element: <ForgotPasswordPage /> },
         ],
       },
     ],

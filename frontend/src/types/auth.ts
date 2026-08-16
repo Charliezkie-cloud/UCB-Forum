@@ -16,3 +16,19 @@ export interface AuthResponse {
   token: string
   user: User
 }
+
+export interface ForgotPasswordRequest {
+  email: string
+}
+
+export interface ForgotPasswordResponse {
+  resetToken: string
+  expiresAt: string
+  message: string
+}
+
+export interface ResetPasswordRequest {
+  resetToken: string
+  newPassword: string
+  confirmNewPassword: string
+}

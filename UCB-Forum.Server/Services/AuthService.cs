@@ -82,6 +82,71 @@ public class AuthService
         return (CreateAuthResponse(user), null);
     }
 
+    public async Task<(ForgotPasswordResponse? Response, string? Error)> ForgotPasswordAsync(
+        ForgotPasswordRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var email = request.Email.Trim().ToLowerInvariant();
+
+        var user = await _db.Users
+            .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+
+        if (user is null)
+        {
+            return (null, "No account found with this email address.");
+        }
+
+        var (resetToken, expiresAt) = _jwtTokenService.CreatePasswordResetToken(user);
+
+        var response = new ForgotPasswordResponse
+        {
+            ResetToken = resetToken,
+            ExpiresAt = expiresAt,
+            Message = "Password reset token generated successfully. Use this token to reset your password within 15 minutes."
+        };
+
+        return (response, null);
+    }
+
+    public async Task<string?> ResetPasswordAsync(
+        ResetPasswordRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.ResetToken))
+        {
+            return "Reset token is required.";
+        }
+
+        if (request.NewPassword != request.ConfirmNewPassword)
+        {
+            return "New password and confirmation do not match.";
+        }
+
+        if (request.NewPassword.Length < 8)
+        {
+            return "Password must be at least 8 characters.";
+        }
+
+        var (isValid, userId, error) = _jwtTokenService.ValidatePasswordResetToken(request.ResetToken);
+        if (!isValid || userId is null)
+        {
+            return error ?? "Invalid or expired reset token.";
+        }
+
+        var user = await _db.Users
+            .FirstOrDefaultAsync(u => u.UserId == userId.Value, cancellationToken);
+
+        if (user is null)
+        {
+            return "User not found.";
+        }
+
+        user.Password = PasswordHasher.Hash(request.NewPassword);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return null;
+    }
+
     private AuthResponse CreateAuthResponse(User user)
     {
         var (token, expiresAt) = _jwtTokenService.CreateToken(user);

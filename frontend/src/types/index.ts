@@ -9,7 +9,14 @@ export type {
   ChangePasswordRequest,
   DeleteAccountRequest,
 } from "@/types/user"
-export type { LoginRequest, RegisterRequest, AuthResponse } from "@/types/auth"
+export type {
+  LoginRequest,
+  RegisterRequest,
+  AuthResponse,
+  ForgotPasswordRequest,
+  ForgotPasswordResponse,
+  ResetPasswordRequest,
+} from "@/types/auth"
 export type {
   Category,
   CategoryTreeNode,

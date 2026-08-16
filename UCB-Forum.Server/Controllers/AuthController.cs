@@ -87,4 +87,36 @@ public class AuthController : ControllerBase
             UserRoleCode = userRoleCode
         });
     }
+
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    public async Task<ActionResult<ForgotPasswordResponse>> ForgotPassword(
+        [FromBody] ForgotPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        var (response, error) = await _authService.ForgotPasswordAsync(request, cancellationToken);
+
+        if (error is not null)
+        {
+            return BadRequest(new { message = error });
+        }
+
+        return Ok(response);
+    }
+
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ResetPassword(
+        [FromBody] ResetPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        var error = await _authService.ResetPasswordAsync(request, cancellationToken);
+
+        if (error is not null)
+        {
+            return BadRequest(new { message = error });
+        }
+
+        return Ok(new { message = "Your password has been reset successfully. You can now log in with your new password." });
+    }
 }
