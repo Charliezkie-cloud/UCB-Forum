@@ -190,7 +190,7 @@ export function RichTextEditor({
         <div className="relative">
           <RichTextPlugin
             contentEditable={
-              <ContentEditable className="min-h-36 px-3 py-2 text-sm outline-none" />
+              <ContentEditable className="min-h-24 break-words px-3 py-2 text-sm outline-none sm:min-h-36" />
             }
             placeholder={
               <div className="pointer-events-none absolute top-2 left-3 text-sm text-muted-foreground">

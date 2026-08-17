@@ -83,7 +83,7 @@ export function CreatePostDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
-        <form onSubmit={(e) => void handleSubmit(e)}>
+        <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-4">
           <DialogHeader>
             <DialogTitle>New discussion</DialogTitle>
             <DialogDescription>
@@ -91,7 +91,7 @@ export function CreatePostDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="mt-4 space-y-4">
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="post-title">Title</Label>
               <Input
@@ -122,7 +122,7 @@ export function CreatePostDialog({
             )}
           </div>
 
-          <DialogFooter className="mt-6">
+          <DialogFooter>
             <Button
               type="button"
               variant="outline"

@@ -83,7 +83,7 @@ export function EditPostDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
-        <form onSubmit={(e) => void handleSubmit(e)}>
+        <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-4">
           <DialogHeader>
             <DialogTitle>Edit post</DialogTitle>
             <DialogDescription>
@@ -91,7 +91,7 @@ export function EditPostDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="mt-4 space-y-4">
+          <div className="space-y-4">
             {isTopLevel && (
               <div className="space-y-2">
                 <Label htmlFor="edit-post-title">Title</Label>
@@ -125,7 +125,7 @@ export function EditPostDialog({
             )}
           </div>
 
-          <DialogFooter className="mt-6">
+          <DialogFooter>
             <Button
               type="button"
               variant="outline"

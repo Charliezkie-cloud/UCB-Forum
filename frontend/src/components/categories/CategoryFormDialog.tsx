@@ -200,125 +200,127 @@ export function CategoryFormDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>
-            {mode === "create" ? "Create Category" : "Edit Category"}
-          </DialogTitle>
-          <DialogDescription>
-            {mode === "create"
-              ? "Add a category so posts have a clear home. Put it under a parent category if you need subgroups."
-              : "Change this category's name, parent, visibility, or other details."}
-          </DialogDescription>
-        </DialogHeader>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <DialogHeader>
+            <DialogTitle>
+              {mode === "create" ? "Create Category" : "Edit Category"}
+            </DialogTitle>
+            <DialogDescription>
+              {mode === "create"
+                ? "Add a category so posts have a clear home. Put it under a parent category if you need subgroups."
+                : "Change this category's name, parent, visibility, or other details."}
+            </DialogDescription>
+          </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="category-name">Name</Label>
-            <Input
-              id="category-name"
-              value={form.name}
-              onChange={(e) => updateField("name", e.target.value)}
-              placeholder="e.g. Computer Studies"
-              maxLength={100}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="category-slug">Slug</Label>
-            <Input
-              id="category-slug"
-              value={form.slug}
-              onChange={(e) => updateField("slug", e.target.value)}
-              placeholder="auto-generated-from-name"
-              maxLength={120}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="category-parent">Parent category</Label>
-            <select
-              id="category-parent"
-              value={form.parentCategoryId}
-              onChange={(e) => updateField("parentCategoryId", e.target.value)}
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-            >
-              <option value="">None (root category)</option>
-              {parentOptions.map((item) => (
-                <option key={item.categoryId} value={item.categoryId}>
-                  {item.name}
-                  {!item.isActive ? " (inactive)" : ""}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="category-description">Description</Label>
-            <Input
-              id="category-description"
-              value={form.description}
-              onChange={(e) => updateField("description", e.target.value)}
-              placeholder="Optional short description"
-              maxLength={255}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="category-icon">Icon class</Label>
+              <Label htmlFor="category-name">Name</Label>
               <Input
-                id="category-icon"
-                value={form.iconClass}
-                onChange={(e) => updateField("iconClass", e.target.value)}
-                placeholder="optional"
-                maxLength={50}
+                id="category-name"
+                value={form.name}
+                onChange={(e) => updateField("name", e.target.value)}
+                placeholder="e.g. Computer Studies"
+                maxLength={100}
+                required
               />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="category-order">Display order</Label>
+              <Label htmlFor="category-slug">Slug</Label>
               <Input
-                id="category-order"
-                type="number"
-                value={form.displayOrder}
-                onChange={(e) => updateField("displayOrder", e.target.value)}
+                id="category-slug"
+                value={form.slug}
+                onChange={(e) => updateField("slug", e.target.value)}
+                placeholder="auto-generated-from-name"
+                maxLength={120}
               />
             </div>
-          </div>
 
-          <div className="flex flex-col gap-3 pt-1">
-            <label className="flex items-center gap-2 text-sm">
-              <Checkbox
-                checked={form.isRestricted}
-                onCheckedChange={(checked) =>
-                  updateField("isRestricted", checked === true)
-                }
-              />
-              Restricted (students+ only)
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <Checkbox
-                checked={form.isPostingAllowed}
-                onCheckedChange={(checked) =>
-                  updateField("isPostingAllowed", checked === true)
-                }
-              />
-              Allow posting
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <Checkbox
-                checked={form.isActive}
-                onCheckedChange={(checked) => updateField("isActive", checked === true)}
-              />
-              Active
-            </label>
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="category-parent">Parent category</Label>
+              <select
+                id="category-parent"
+                value={form.parentCategoryId}
+                onChange={(e) => updateField("parentCategoryId", e.target.value)}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+              >
+                <option value="">None (root category)</option>
+                {parentOptions.map((item) => (
+                  <option key={item.categoryId} value={item.categoryId}>
+                    {item.name}
+                    {!item.isActive ? " (inactive)" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          {errorMsg && (
-            <p className="text-xs text-destructive" role="alert">
-              {errorMsg}
-            </p>
-          )}
+            <div className="space-y-2">
+              <Label htmlFor="category-description">Description</Label>
+              <Input
+                id="category-description"
+                value={form.description}
+                onChange={(e) => updateField("description", e.target.value)}
+                placeholder="Optional short description"
+                maxLength={255}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="category-icon">Icon class</Label>
+                <Input
+                  id="category-icon"
+                  value={form.iconClass}
+                  onChange={(e) => updateField("iconClass", e.target.value)}
+                  placeholder="optional"
+                  maxLength={50}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="category-order">Display order</Label>
+                <Input
+                  id="category-order"
+                  type="number"
+                  value={form.displayOrder}
+                  onChange={(e) => updateField("displayOrder", e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 pt-1">
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={form.isRestricted}
+                  onCheckedChange={(checked) =>
+                    updateField("isRestricted", checked === true)
+                  }
+                />
+                Restricted (students+ only)
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={form.isPostingAllowed}
+                  onCheckedChange={(checked) =>
+                    updateField("isPostingAllowed", checked === true)
+                  }
+                />
+                Allow posting
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={form.isActive}
+                  onCheckedChange={(checked) => updateField("isActive", checked === true)}
+                />
+                Active
+              </label>
+            </div>
+
+            {errorMsg && (
+              <p className="text-xs text-destructive" role="alert">
+                {errorMsg}
+              </p>
+            )}
+          </div>
 
           <DialogFooter>
             <Button

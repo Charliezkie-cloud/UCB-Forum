@@ -378,8 +378,8 @@ export function UserProfilePage() {
               <DialogContent className="sm:max-w-sm">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
-                    <Award className="size-5 text-amber-500" />
-                    Rate {profile.username}&apos;s Reputation
+                    <Award className="size-5 shrink-0 text-amber-500" />
+                    <span className="min-w-0 break-words">Rate {profile.username}&apos;s Reputation</span>
                   </DialogTitle>
                   <DialogDescription>
                     Your vote affects their reputation score on the forum. You can change or retract it any time.
@@ -487,11 +487,11 @@ export function UserProfilePage() {
                 </DialogTrigger>
 
                 <DialogContent className="sm:max-w-md">
-                  <form onSubmit={handleBanSubmit} className="space-y-4">
+                  <form onSubmit={handleBanSubmit} className="flex flex-col gap-4">
                     <DialogHeader>
                       <DialogTitle className="flex items-center gap-2 text-destructive">
-                        <ShieldAlert className="size-5" />
-                        Ban User: {profile.username}
+                        <ShieldAlert className="size-5 shrink-0" />
+                        <span className="min-w-0 break-words">Ban User: {profile.username}</span>
                       </DialogTitle>
                       <DialogDescription>
                         Restricting this user prevents them from posting, commenting, or interacting on the forum.
@@ -512,7 +512,7 @@ export function UserProfilePage() {
                       </div>
                     )}
 
-                    <div className="space-y-3 py-1">
+                    <div className="space-y-3">
                       {/* Ban Reason */}
                       <div className="space-y-1.5">
                         <Label htmlFor="ban-reason" className="text-xs font-semibold text-foreground">
@@ -539,7 +539,7 @@ export function UserProfilePage() {
                         <Label className="text-xs font-semibold text-foreground">
                           Ban Duration
                         </Label>
-                        <div className="grid grid-cols-3 gap-1.5">
+                        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
                           {[
                             { value: "permanent", label: "Permanent" },
                             { value: "24h", label: "24 Hours" },
@@ -576,7 +576,7 @@ export function UserProfilePage() {
                             value={customExpiresAt}
                             onChange={(e) => setCustomExpiresAt(e.target.value)}
                             min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
-                            className="h-9 text-xs"
+                            className="h-9 max-w-full text-xs"
                             required
                             disabled={banLoading}
                           />
@@ -584,7 +584,7 @@ export function UserProfilePage() {
                       )}
                     </div>
 
-                    <DialogFooter className="gap-2 sm:gap-0 pt-2">
+                    <DialogFooter>
                       <Button
                         type="button"
                         variant="ghost"
