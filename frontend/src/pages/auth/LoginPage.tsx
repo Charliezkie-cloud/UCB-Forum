@@ -29,8 +29,8 @@ export function LoginPage() {
     setIsSubmitting(true)
 
     try {
-      await login({ email, password })
-      navigate("/", { replace: true })
+      const { isBanned } = await login({ email, password })
+      navigate(isBanned ? "/banned" : "/", { replace: true })
     } catch {
       setError("We couldn't sign you in. Please check your email and password, then try again.")
     } finally {

@@ -69,4 +69,21 @@ export interface DeleteAccountRequest {
   currentPassword: string
 }
 
+export interface BanUserRequest {
+  reason: string
+  expiresAt?: string | null
+}
+
+export interface UserBanResponse {
+  banId: number
+  userId: number
+  bannedByUserId: number
+  bannedByUsername?: string | null
+  createdAt: string
+  expiresAt: string | null
+  reason: string
+  isActive: boolean
+}
+
+
 

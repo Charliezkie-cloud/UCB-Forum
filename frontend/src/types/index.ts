@@ -8,6 +8,8 @@ export type {
   GiveReputationRequest,
   ChangePasswordRequest,
   DeleteAccountRequest,
+  BanUserRequest,
+  UserBanResponse,
 } from "@/types/user"
 export type {
   LoginRequest,

@@ -2,10 +2,10 @@ import { Navigate, Outlet } from "react-router-dom"
 import { useAuth } from "@/hooks/useAuth"
 
 /**
- * Guest-only auth pages (login / register / forgot-password).
- * Authenticated users are sent home; banned authenticated users are sent to /banned.
+ * Ban page only. Requires an authenticated user with an ongoing ban.
+ * Non-banned users go home; unauthenticated users go to login.
  */
-export function GuestRoute() {
+export function BannedRoute() {
   const { isAuthenticated, isLoading, isBanned } = useAuth()
 
   if (isLoading) {
@@ -16,8 +16,12 @@ export function GuestRoute() {
     )
   }
 
-  if (isAuthenticated) {
-    return <Navigate to={isBanned ? "/banned" : "/"} replace />
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />
+  }
+
+  if (!isBanned) {
+    return <Navigate to="/" replace />
   }
 
   return <Outlet />

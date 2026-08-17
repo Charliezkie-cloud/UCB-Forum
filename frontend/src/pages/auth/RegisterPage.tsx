@@ -45,8 +45,8 @@ export function RegisterPage() {
     setIsSubmitting(true)
 
     try {
-      await register({ username, email, password, confirmPassword })
-      navigate("/", { replace: true })
+      const { isBanned } = await register({ username, email, password, confirmPassword })
+      navigate(isBanned ? "/banned" : "/", { replace: true })
     } catch {
       setError("We couldn't create your account. Please check your details and try again.")
     } finally {

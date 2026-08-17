@@ -1,4 +1,5 @@
 import { createBrowserRouter } from "react-router-dom"
+import { BannedRoute } from "@/components/auth/BannedRoute"
 import { GuestRoute } from "@/components/auth/GuestRoute"
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
 import { AppLayout } from "@/components/layouts/AppLayout"
@@ -16,6 +17,7 @@ import { PrivacyPage } from "@/pages/PrivacyPage"
 import { LoginPage } from "@/pages/auth/LoginPage"
 import { RegisterPage } from "@/pages/auth/RegisterPage"
 import { ForgotPasswordPage } from "@/pages/auth/ForgotPasswordPage"
+import { BanPage } from "@/pages/auth/BanPage"
 
 export const router = createBrowserRouter([
   {
@@ -41,6 +43,10 @@ export const router = createBrowserRouter([
     ],
   },
   {
+    element: <BannedRoute />,
+    children: [{ path: "/banned", element: <BanPage /> }],
+  },
+  {
     element: <ProtectedRoute />,
     children: [
       {
@@ -60,4 +66,3 @@ export const router = createBrowserRouter([
   },
   { path: "*", element: <NotFoundPage /> },
 ])
-

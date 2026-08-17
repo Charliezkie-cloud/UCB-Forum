@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UCB_Forum.Server.Authorization;
 using UCB_Forum.Server.Dtos.Profiles;
+using UCB_Forum.Server.Filters;
 using UCB_Forum.Server.Models;
 using UCB_Forum.Server.Services;
 
@@ -10,6 +11,7 @@ namespace UCB_Forum.Server.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[ServiceFilter(typeof(BannedUserFilter))]
 public class ProfilesController : ControllerBase
 {
     private readonly ProfileService _profileService;
@@ -168,6 +170,67 @@ public class ProfilesController : ControllerBase
             if (error == "This username is already taken.")
             {
                 return Conflict(new { message = error });
+            }
+            return BadRequest(new { message = error });
+        }
+
+        return Ok(response);
+    }
+
+    [HttpPost("{userId:int}/ban")]
+    [Authorize(Policy = ForumPolicies.RequireModeratorOrAdmin)]
+    public async Task<ActionResult<UserBanResponse>> BanUser(
+        [FromRoute] int userId,
+        [FromBody] BanUserRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var callerUserId) || !TryGetRoleCode(out var callerRoleCode))
+        {
+            return Unauthorized(new { message = "Invalid user identity." });
+        }
+
+        var (response, error) = await _profileService.BanUserAsync(userId, request, callerUserId, callerRoleCode, cancellationToken);
+
+        if (error is not null)
+        {
+            if (error == "User not found.")
+            {
+                return NotFound(new { message = error });
+            }
+            if (error == "You do not have permission to ban users." ||
+                error == "Administrators cannot be banned." ||
+                error == "Only administrators can ban moderators.")
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = error });
+            }
+            return BadRequest(new { message = error });
+        }
+
+        return Ok(response);
+    }
+
+    [HttpGet("{userId:int}/ban")]
+    [Authorize]
+    public async Task<ActionResult<UserBanResponse>> GetUserBanStatus(
+        [FromRoute] int userId,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var callerUserId) || !TryGetRoleCode(out var callerRoleCode))
+        {
+            return Unauthorized(new { message = "Invalid user identity." });
+        }
+
+        var (response, error) = await _profileService.GetUserBanStatusAsync(userId, callerUserId, callerRoleCode, cancellationToken);
+
+        if (error is not null)
+        {
+            if (error == "User not found.")
+            {
+                return NotFound(new { message = error });
+            }
+            if (error == "You do not have permission to view ban details.")
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = error });
             }
             return BadRequest(new { message = error });
         }

@@ -138,17 +138,30 @@ Table Notifications {
   IsRead BIT [default: 0]
 }
 
+Table UserBans {
+  BanId INT [pk, increment, unique]
+  UserId INT [not null]
+  BannedByUserId INT [not null]
+  CreatedAt DATETIME2 [not null]
+  ExpiresAt DATETIME2 [default: null] // NULL = permanent ban, NOT NULL = timed ban
+  Reason NVARCHAR(500) [not null]
+  IsActive BIT [default: 1]
+}
+
 // Foreign Key Relationships
 Ref: Profiles.UserId - Users.UserId [delete: cascade, update: cascade]
 Ref: Posts.AuthorId > Users.UserId [delete: no action]
 Ref: Posts.CategoryId > Categories.CategoryId [delete: cascade]
 Ref: Posts.ParentPostId > Posts.PostID [delete: no action]
 Ref: Categories.ParentCategoryId > Categories.CategoryId [delete: no action]
-Ref: PostLikes.(PostId, UserId) > (Posts.PostID, Users.UserId) [delete: cascade]
+Ref: PostLikes.PostId > Posts.PostID [delete: cascade]
+Ref: PostLikes.UserId > Users.UserId [delete: cascade]
 Ref: Reputations.SourceUserId > Users.UserId [delete: cascade]
 Ref: Reputations.TargetUserId > Users.UserId [delete: no action]
 Ref: Notifications.UserId > Users.UserId [delete: cascade]
 Ref: Notifications.RelatedPostId > Posts.PostID [delete: set null]
+Ref: UserBans.UserId > Users.UserId [delete: cascade]
+Ref: UserBans.BannedByUserId > Users.UserId [delete: no action]
 ```
 
 ## 4. USERS PERMISSIONS: User Role Code Permissions
@@ -168,6 +181,7 @@ Ref: Notifications.RelatedPostId > Posts.PostID [delete: set null]
 | PostLikes (with restricted category) | No | No | No | No |
 | PostLikes (with posting not allowed category) | Yes | Yes | Yes | Yes |
 | Categories | No | Yes | No | No |
+| UserBans | No | No | No | No |
 
 ### UCB-Students and Faculty
 | Operation | Create | Read | Update | Delete
@@ -182,6 +196,7 @@ Ref: Notifications.RelatedPostId > Posts.PostID [delete: set null]
 | PostLikes (with restricted category) | Yes | Yes | Yes | Yes |
 | PostLikes (with posting not allowed category) | Yes | Yes | Yes | Yes |
 | Categories | No | Yes | No | No |
+| UserBans | No | No | No | No |
 
 ### Moderators and Admin
 | Operation | Create | Read | Update | Delete
@@ -196,6 +211,7 @@ Ref: Notifications.RelatedPostId > Posts.PostID [delete: set null]
 | PostLikes (with restricted category) | Yes | Yes | Yes | Yes |
 | PostLikes (with posting not allowed category) | Yes | Yes | Yes | Yes |
 | Categories | Yes | Yes | Yes | Yes |
+| UserBans | Yes | Yes | Yes | Yes |
 
 ## 5. STRICT RULES: Human-Authored Code Protection
 

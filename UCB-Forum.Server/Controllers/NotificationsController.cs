@@ -2,12 +2,14 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UCB_Forum.Server.Dtos.Notifications;
+using UCB_Forum.Server.Filters;
 using UCB_Forum.Server.Services;
 
 namespace UCB_Forum.Server.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[ServiceFilter(typeof(BannedUserFilter))]
 public class NotificationsController : ControllerBase
 {
     private readonly NotificationService _notificationService;

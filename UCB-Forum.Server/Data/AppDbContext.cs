@@ -17,6 +17,7 @@ public class AppDbContext : DbContext
     public DbSet<PostLike> PostLikes => Set<PostLike>();
     public DbSet<Reputation> Reputations => Set<Reputation>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<UserBan> UserBans => Set<UserBan>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -324,6 +325,49 @@ public class AppDbContext : DbContext
                 .WithMany(p => p.Notifications)
                 .HasForeignKey(e => e.RelatedPostId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<UserBan>(entity =>
+        {
+            entity.ToTable("UserBans");
+            entity.HasKey(e => e.BanId);
+
+            entity.Property(e => e.BanId)
+                .ValueGeneratedOnAdd();
+
+            entity.Property(e => e.UserId)
+                .IsRequired();
+
+            entity.Property(e => e.BannedByUserId)
+                .IsRequired();
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnType("datetime2")
+                .IsRequired();
+
+            entity.Property(e => e.ExpiresAt)
+                .HasColumnType("datetime2");
+
+            entity.Property(e => e.Reason)
+                .HasColumnType("nvarchar(500)")
+                .HasMaxLength(500)
+                .IsRequired();
+
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true);
+
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.IsActive);
+
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.ReceivedBans)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.BannedByUser)
+                .WithMany(u => u.IssuedBans)
+                .HasForeignKey(e => e.BannedByUserId)
+                .OnDelete(DeleteBehavior.NoAction);
         });
     }
 }

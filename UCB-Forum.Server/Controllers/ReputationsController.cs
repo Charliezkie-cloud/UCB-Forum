@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UCB_Forum.Server.Dtos.Reputations;
+using UCB_Forum.Server.Filters;
 using UCB_Forum.Server.Models;
 using UCB_Forum.Server.Services;
 
@@ -9,6 +10,7 @@ namespace UCB_Forum.Server.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[ServiceFilter(typeof(BannedUserFilter))]
 public class ReputationsController : ControllerBase
 {
     private readonly ReputationService _reputationService;

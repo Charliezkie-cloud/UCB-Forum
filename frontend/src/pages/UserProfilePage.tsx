@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { getProfileByUserId } from "@/api/profiles"
+import { getProfileByUserId, banUser, getUserBanStatus } from "@/api/profiles"
 import { getReputationStatus, addReputation, downvoteReputation, removeReputation } from "@/api/reputations"
-import type { Profile, ReputationResponse } from "@/types"
+import type { Profile, ReputationResponse, UserBanResponse } from "@/types"
 import { useAuth } from "@/hooks/useAuth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Dialog,
   DialogContent,
@@ -34,6 +36,9 @@ import {
   ThumbsUp,
   ThumbsDown,
   Minus,
+  Ban,
+  ShieldAlert,
+  Clock,
 } from "lucide-react"
 
 const ROLE_NAMES: Record<number, { name: string; bgClass: string }> = {
@@ -59,6 +64,16 @@ export function UserProfilePage() {
   const [repError, setRepError] = useState<string | null>(null)
   const [repDialogOpen, setRepDialogOpen] = useState(false)
 
+  // Ban Dialog State
+  const [banDialogOpen, setBanDialogOpen] = useState(false)
+  const [banReason, setBanReason] = useState("")
+  const [banDurationType, setBanDurationType] = useState<"permanent" | "24h" | "3d" | "7d" | "30d" | "custom">("permanent")
+  const [customExpiresAt, setCustomExpiresAt] = useState("")
+  const [banLoading, setBanLoading] = useState(false)
+  const [banError, setBanError] = useState<string | null>(null)
+  const [banSuccess, setBanSuccess] = useState<string | null>(null)
+  const [banResult, setBanResult] = useState<UserBanResponse | null>(null)
+
   useEffect(() => {
     async function loadProfile() {
       const parsedId = userId ? parseInt(userId, 10) : NaN
@@ -73,6 +88,19 @@ export function UserProfilePage() {
         setErrorMsg(null)
         const data = await getProfileByUserId(parsedId)
         setProfile(data)
+
+        if (authUser && (authUser.userRoleCode === 4 || authUser.userRoleCode === 5 || authUser.userId === parsedId)) {
+          try {
+            const banData = await getUserBanStatus(parsedId)
+            if (banData && banData.isActive) {
+              setBanResult(banData)
+            } else {
+              setBanResult(null)
+            }
+          } catch {
+            // Non-critical: ignore error
+          }
+        }
       } catch (err: unknown) {
         console.error("Failed to load user profile", err)
         setErrorMsg("This profile could not be found or is no longer available.")
@@ -82,7 +110,7 @@ export function UserProfilePage() {
     }
 
     void loadProfile()
-  }, [userId])
+  }, [userId, authUser])
 
   // Guests (roleCode 1) cannot vote on reputation; owners cannot vote on themselves.
   const targetUserId = userId ? parseInt(userId, 10) : NaN
@@ -125,6 +153,70 @@ export function UserProfilePage() {
       setRepError(axiosErr.response?.data?.message ?? "Something went wrong. Please try again.")
     } finally {
       setRepActionLoading(false)
+    }
+  }
+
+  // STRICT: Only Moderators (4) and Admins (5) can ban users
+  const isCallerModOrAdmin =
+    authUser !== null && (authUser.userRoleCode === 4 || authUser.userRoleCode === 5)
+  const isSelf = authUser !== null && authUser.userId === targetUserId
+  const isTargetAdmin = profile !== null && profile.userRoleCode === 5
+  const isTargetMod = profile !== null && profile.userRoleCode === 4
+  const isCallerAdmin = authUser !== null && authUser.userRoleCode === 5
+
+  const canBanUser =
+    isCallerModOrAdmin &&
+    !isSelf &&
+    !isTargetAdmin &&
+    (!isTargetMod || isCallerAdmin)
+
+  const handleBanSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!canBanUser || !banReason.trim() || isNaN(targetUserId)) return
+
+    setBanLoading(true)
+    setBanError(null)
+    setBanSuccess(null)
+
+    let calculatedExpiresAt: string | undefined = undefined
+
+    if (banDurationType === "24h") {
+      calculatedExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+    } else if (banDurationType === "3d") {
+      calculatedExpiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
+    } else if (banDurationType === "7d") {
+      calculatedExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    } else if (banDurationType === "30d") {
+      calculatedExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+    } else if (banDurationType === "custom" && customExpiresAt) {
+      const customDate = new Date(customExpiresAt)
+      if (customDate <= new Date()) {
+        setBanError("Ban expiration date must be in the future.")
+        setBanLoading(false)
+        return
+      }
+      calculatedExpiresAt = customDate.toISOString()
+    }
+
+    try {
+      const result = await banUser(targetUserId, {
+        reason: banReason.trim(),
+        expiresAt: calculatedExpiresAt,
+      })
+      setBanResult(result)
+      setBanSuccess(`User ${profile?.username ?? ""} has been banned successfully.`)
+      setTimeout(() => {
+        setBanDialogOpen(false)
+        setBanReason("")
+        setBanDurationType("permanent")
+        setCustomExpiresAt("")
+        setBanSuccess(null)
+      }, 1500)
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } }
+      setBanError(axiosErr.response?.data?.message ?? "Failed to ban user. Please try again.")
+    } finally {
+      setBanLoading(false)
     }
   }
 
@@ -175,6 +267,24 @@ export function UserProfilePage() {
           Back
         </button>
       </div>
+
+      {/* Active Ban Banner (Shown when user has just been banned) */}
+      {banResult && banResult.isActive && (
+        <div className="flex items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-destructive">
+          <ShieldAlert className="size-5 shrink-0" />
+          <div className="text-xs space-y-0.5">
+            <p className="font-semibold text-sm">This user is currently banned</p>
+            <p className="text-foreground/80">
+              <span className="font-medium text-foreground">Reason:</span> {banResult.reason}
+            </p>
+            <p className="text-muted-foreground">
+              {banResult.expiresAt
+                ? `Expires on ${new Date(banResult.expiresAt).toLocaleString()}`
+                : "Permanent Ban"}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Top Banner & Profile Header */}
       <div className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
@@ -349,6 +459,163 @@ export function UserProfilePage() {
             <div className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-1 rounded-full border border-emerald-500/20 text-xs font-medium">
               <Shield className="size-4" />
               <span>Verified Faculty Member</span>
+            </div>
+          )}
+
+          {/* Ban User Button (STRICT: Only visible if caller is a Moderator or Admin) */}
+          {canBanUser && (
+            <div className="sm:ml-auto">
+              <Dialog
+                open={banDialogOpen}
+                onOpenChange={(open) => {
+                  setBanDialogOpen(open)
+                  if (!open) {
+                    setBanError(null)
+                    setBanSuccess(null)
+                  }
+                }}
+              >
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 rounded-full text-xs gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/10 hover:border-destructive"
+                  >
+                    <Ban className="size-3.5" />
+                    Ban User
+                  </Button>
+                </DialogTrigger>
+
+                <DialogContent className="sm:max-w-md">
+                  <form onSubmit={handleBanSubmit} className="space-y-4">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2 text-destructive">
+                        <ShieldAlert className="size-5" />
+                        Ban User: {profile.username}
+                      </DialogTitle>
+                      <DialogDescription>
+                        Restricting this user prevents them from posting, commenting, or interacting on the forum.
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    {banSuccess && (
+                      <div className="flex items-start gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-xs text-emerald-600 dark:text-emerald-400">
+                        <CheckCircle2 className="size-4 mt-0.5 shrink-0" />
+                        <span>{banSuccess}</span>
+                      </div>
+                    )}
+
+                    {banError && (
+                      <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-xs text-destructive">
+                        <AlertCircle className="size-4 mt-0.5 shrink-0" />
+                        <span>{banError}</span>
+                      </div>
+                    )}
+
+                    <div className="space-y-3 py-1">
+                      {/* Ban Reason */}
+                      <div className="space-y-1.5">
+                        <Label htmlFor="ban-reason" className="text-xs font-semibold text-foreground">
+                          Reason for Ban <span className="text-destructive">*</span>
+                        </Label>
+                        <textarea
+                          id="ban-reason"
+                          required
+                          rows={3}
+                          maxLength={500}
+                          value={banReason}
+                          onChange={(e) => setBanReason(e.target.value)}
+                          placeholder="Provide a clear reason for the ban (e.g. inappropriate behavior, harassment, spam)"
+                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                          disabled={banLoading}
+                        />
+                        <div className="flex justify-end text-[11px] text-muted-foreground">
+                          {banReason.length}/500
+                        </div>
+                      </div>
+
+                      {/* Duration Preset Selector */}
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold text-foreground">
+                          Ban Duration
+                        </Label>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {[
+                            { value: "permanent", label: "Permanent" },
+                            { value: "24h", label: "24 Hours" },
+                            { value: "3d", label: "3 Days" },
+                            { value: "7d", label: "7 Days" },
+                            { value: "30d", label: "30 Days" },
+                            { value: "custom", label: "Custom" },
+                          ].map((item) => (
+                            <Button
+                              key={item.value}
+                              type="button"
+                              variant={banDurationType === item.value ? "default" : "outline"}
+                              size="sm"
+                              className="h-8 text-xs font-medium"
+                              onClick={() => setBanDurationType(item.value as typeof banDurationType)}
+                              disabled={banLoading}
+                            >
+                              {item.label}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Custom Expiration Input */}
+                      {banDurationType === "custom" && (
+                        <div className="space-y-1.5 pt-1">
+                          <Label htmlFor="custom-expires-at" className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                            <Clock className="size-3.5" />
+                            Expiration Date & Time <span className="text-destructive">*</span>
+                          </Label>
+                          <Input
+                            id="custom-expires-at"
+                            type="datetime-local"
+                            value={customExpiresAt}
+                            onChange={(e) => setCustomExpiresAt(e.target.value)}
+                            min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
+                            className="h-9 text-xs"
+                            required
+                            disabled={banLoading}
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    <DialogFooter className="gap-2 sm:gap-0 pt-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setBanDialogOpen(false)
+                          setBanError(null)
+                          setBanSuccess(null)
+                        }}
+                        disabled={banLoading}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        variant="destructive"
+                        size="sm"
+                        className="gap-1.5"
+                        disabled={banLoading || !banReason.trim() || (banDurationType === "custom" && !customExpiresAt)}
+                      >
+                        {banLoading ? (
+                          <Loader2 className="size-3.5 animate-spin" />
+                        ) : (
+                          <ShieldAlert className="size-3.5" />
+                        )}
+                        Confirm Ban
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
             </div>
           )}
         </div>

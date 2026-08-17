@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UCB_Forum.Server.Authorization;
 using UCB_Forum.Server.Dtos.Categories;
+using UCB_Forum.Server.Filters;
 using UCB_Forum.Server.Models;
 using UCB_Forum.Server.Services;
 
@@ -10,6 +11,7 @@ namespace UCB_Forum.Server.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[ServiceFilter(typeof(BannedUserFilter))]
 public class CategoriesController : ControllerBase
 {
     private readonly CategoryService _categoryService;

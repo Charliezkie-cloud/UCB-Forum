@@ -5,12 +5,14 @@ using UCB_Forum.Server.Dtos.Categories;
 using UCB_Forum.Server.Dtos.Posts;
 using UCB_Forum.Server.Dtos.Profiles;
 using UCB_Forum.Server.Dtos.Search;
+using UCB_Forum.Server.Filters;
 using UCB_Forum.Server.Services;
 
 namespace UCB_Forum.Server.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[ServiceFilter(typeof(BannedUserFilter))]
 public class SearchController : ControllerBase
 {
     private readonly SearchService _searchService;
