@@ -3,3 +3,10 @@
 
 # Purpose of the Project
 - To allow UCB Students to share and discuss topics in a single platform.
+
+# Development
+- Clone the project `git clone https://github.com/Charliezkie-cloud/UCB-Forum.git`
+- Navigate to frontend and install the required npm dependencies `npm install`
+- Navigate to UCB-Forum.Server and install the required dotnet dependencies `dotnet restore`
+- Open the .SLNX file in visual studio and run the AppHost
+- Enjoy
