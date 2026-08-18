@@ -4,9 +4,15 @@
 # Purpose of the Project
 - To allow UCB Students to share and discuss topics in a single platform.
 
+# Project Information
+- **Frontend:** React JS with React Router
+- **Backend:** ASP.NET Core MVC API
+
 # Development
 - Clone the project `git clone https://github.com/Charliezkie-cloud/UCB-Forum.git`
 - Navigate to frontend and install the required npm dependencies `npm install`
 - Navigate to UCB-Forum.Server and install the required dotnet dependencies `dotnet restore`
-- Open the .SLNX file in visual studio and run the AppHost
-- Enjoy
+- Open the .SLNX file in visual studio and run the Azure Apphost
+
+# With CLI Agents
+I have attached added 4 CLI Agents and a `AGENTS.md` file for the CLI agent to read.
