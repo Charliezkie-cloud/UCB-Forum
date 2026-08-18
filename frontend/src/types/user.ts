@@ -74,6 +74,11 @@ export interface BanUserRequest {
   expiresAt?: string | null
 }
 
+export interface UpdateBanRequest {
+  reason: string
+  expiresAt?: string | null
+}
+
 export interface UserBanResponse {
   banId: number
   userId: number

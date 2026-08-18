@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { getProfileByUserId, banUser, getUserBanStatus } from "@/api/profiles"
+import { getProfileByUserId, banUser, getUserBanStatus, updateUserBan, deleteUserBan } from "@/api/profiles"
 import { getReputationStatus, addReputation, downvoteReputation, removeReputation } from "@/api/reputations"
 import type { Profile, ReputationResponse, UserBanResponse } from "@/types"
 import { useAuth } from "@/hooks/useAuth"
@@ -38,8 +38,18 @@ import {
   Minus,
   Ban,
   ShieldAlert,
+  ShieldOff,
   Clock,
+  Pencil,
 } from "lucide-react"
+
+type BanDurationType = "permanent" | "24h" | "3d" | "7d" | "30d" | "custom"
+
+function toDatetimeLocalValue(iso: string): string {
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, "0")
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
 
 const ROLE_NAMES: Record<number, { name: string; bgClass: string }> = {
   1: { name: "Guest", bgClass: "border-muted-foreground/30 text-muted-foreground" },
@@ -67,12 +77,17 @@ export function UserProfilePage() {
   // Ban Dialog State
   const [banDialogOpen, setBanDialogOpen] = useState(false)
   const [banReason, setBanReason] = useState("")
-  const [banDurationType, setBanDurationType] = useState<"permanent" | "24h" | "3d" | "7d" | "30d" | "custom">("permanent")
+  const [banDialogMode, setBanDialogMode] = useState<"create" | "edit">("create")
+  const [banDurationType, setBanDurationType] = useState<BanDurationType>("permanent")
   const [customExpiresAt, setCustomExpiresAt] = useState("")
   const [banLoading, setBanLoading] = useState(false)
   const [banError, setBanError] = useState<string | null>(null)
   const [banSuccess, setBanSuccess] = useState<string | null>(null)
   const [banResult, setBanResult] = useState<UserBanResponse | null>(null)
+
+  const [deleteBanDialogOpen, setDeleteBanDialogOpen] = useState(false)
+  const [deleteBanLoading, setDeleteBanLoading] = useState(false)
+  const [deleteBanError, setDeleteBanError] = useState<string | null>(null)
 
   useEffect(() => {
     async function loadProfile() {
@@ -170,9 +185,43 @@ export function UserProfilePage() {
     !isTargetAdmin &&
     (!isTargetMod || isCallerAdmin)
 
+  const hasActiveBan = banResult !== null && banResult.isActive
+
+  const resetBanForm = () => {
+    setBanReason("")
+    setBanDurationType("permanent")
+    setCustomExpiresAt("")
+    setBanError(null)
+    setBanSuccess(null)
+  }
+
+  const openCreateBanDialog = () => {
+    if (!canBanUser) return
+    setBanDialogMode("create")
+    resetBanForm()
+    setBanDialogOpen(true)
+  }
+
+  const openEditBanDialog = () => {
+    if (!canBanUser || !banResult) return
+    setBanDialogMode("edit")
+    setBanReason(banResult.reason)
+    if (banResult.expiresAt) {
+      setBanDurationType("custom")
+      setCustomExpiresAt(toDatetimeLocalValue(banResult.expiresAt))
+    } else {
+      setBanDurationType("permanent")
+      setCustomExpiresAt("")
+    }
+    setBanError(null)
+    setBanSuccess(null)
+    setBanDialogOpen(true)
+  }
+
   const handleBanSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!canBanUser || !banReason.trim() || isNaN(targetUserId)) return
+    if (banDialogMode === "edit" && !hasActiveBan) return
 
     setBanLoading(true)
     setBanError(null)
@@ -199,24 +248,52 @@ export function UserProfilePage() {
     }
 
     try {
-      const result = await banUser(targetUserId, {
+      const payload = {
         reason: banReason.trim(),
-        expiresAt: calculatedExpiresAt,
-      })
+        expiresAt: calculatedExpiresAt ?? null,
+      }
+      const result =
+        banDialogMode === "edit"
+          ? await updateUserBan(targetUserId, payload)
+          : await banUser(targetUserId, payload)
       setBanResult(result)
-      setBanSuccess(`User ${profile?.username ?? ""} has been banned successfully.`)
+      setBanSuccess(
+        banDialogMode === "edit"
+          ? `Ban for ${profile?.username ?? "this user"} has been updated.`
+          : `User ${profile?.username ?? ""} has been banned successfully.`
+      )
       setTimeout(() => {
         setBanDialogOpen(false)
-        setBanReason("")
-        setBanDurationType("permanent")
-        setCustomExpiresAt("")
-        setBanSuccess(null)
+        resetBanForm()
       }, 1500)
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } } }
-      setBanError(axiosErr.response?.data?.message ?? "Failed to ban user. Please try again.")
+      setBanError(
+        axiosErr.response?.data?.message ??
+          (banDialogMode === "edit"
+            ? "Failed to update ban. Please try again."
+            : "Failed to ban user. Please try again.")
+      )
     } finally {
       setBanLoading(false)
+    }
+  }
+
+  const handleDeleteBan = async () => {
+    if (!canBanUser || !hasActiveBan || isNaN(targetUserId)) return
+
+    setDeleteBanLoading(true)
+    setDeleteBanError(null)
+
+    try {
+      await deleteUserBan(targetUserId)
+      setBanResult(null)
+      setDeleteBanDialogOpen(false)
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { message?: string } } }
+      setDeleteBanError(axiosErr.response?.data?.message ?? "Failed to lift ban. Please try again.")
+    } finally {
+      setDeleteBanLoading(false)
     }
   }
 
@@ -268,21 +345,49 @@ export function UserProfilePage() {
         </button>
       </div>
 
-      {/* Active Ban Banner (Shown when user has just been banned) */}
+      {/* Active Ban Banner */}
       {banResult && banResult.isActive && (
-        <div className="flex items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-destructive">
-          <ShieldAlert className="size-5 shrink-0" />
-          <div className="text-xs space-y-0.5">
-            <p className="font-semibold text-sm">This user is currently banned</p>
-            <p className="text-foreground/80">
-              <span className="font-medium text-foreground">Reason:</span> {banResult.reason}
-            </p>
-            <p className="text-muted-foreground">
-              {banResult.expiresAt
-                ? `Expires on ${new Date(banResult.expiresAt).toLocaleString()}`
-                : "Permanent Ban"}
-            </p>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-destructive">
+          <div className="flex items-start gap-3 flex-1 min-w-0">
+            <ShieldAlert className="size-5 shrink-0 mt-0.5" />
+            <div className="text-xs space-y-0.5">
+              <p className="font-semibold text-sm">This user is currently banned</p>
+              <p className="text-foreground/80">
+                <span className="font-medium text-foreground">Reason:</span> {banResult.reason}
+              </p>
+              <p className="text-muted-foreground">
+                {banResult.expiresAt
+                  ? `Expires on ${new Date(banResult.expiresAt).toLocaleString()}`
+                  : "Permanent Ban"}
+              </p>
+            </div>
           </div>
+          {/* STRICT: Only Moderators (4) and Admins (5) can edit or lift bans */}
+          {canBanUser && (
+            <div className="flex shrink-0 flex-wrap items-center gap-2 sm:ml-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 rounded-full text-xs gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/10 hover:border-destructive"
+                onClick={openEditBanDialog}
+              >
+                <Pencil className="size-3.5" />
+                Edit Ban
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="h-7 rounded-full text-xs gap-1.5"
+                onClick={() => {
+                  setDeleteBanError(null)
+                  setDeleteBanDialogOpen(true)
+                }}
+              >
+                <ShieldOff className="size-3.5" />
+                Lift Ban
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
@@ -462,160 +567,18 @@ export function UserProfilePage() {
             </div>
           )}
 
-          {/* Ban User Button (STRICT: Only visible if caller is a Moderator or Admin) */}
-          {canBanUser && (
+          {/* Ban User Button (STRICT: Only visible if caller is a Moderator or Admin, and the user is not already banned) */}
+          {canBanUser && !hasActiveBan && (
             <div className="sm:ml-auto">
-              <Dialog
-                open={banDialogOpen}
-                onOpenChange={(open) => {
-                  setBanDialogOpen(open)
-                  if (!open) {
-                    setBanError(null)
-                    setBanSuccess(null)
-                  }
-                }}
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 rounded-full text-xs gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/10 hover:border-destructive"
+                onClick={openCreateBanDialog}
               >
-                <DialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 rounded-full text-xs gap-1.5 border-destructive/40 text-destructive hover:bg-destructive/10 hover:border-destructive"
-                  >
-                    <Ban className="size-3.5" />
-                    Ban User
-                  </Button>
-                </DialogTrigger>
-
-                <DialogContent className="sm:max-w-md">
-                  <form onSubmit={handleBanSubmit} className="flex flex-col gap-4">
-                    <DialogHeader>
-                      <DialogTitle className="flex items-center gap-2 text-destructive">
-                        <ShieldAlert className="size-5 shrink-0" />
-                        <span className="min-w-0 break-words">Ban User: {profile.username}</span>
-                      </DialogTitle>
-                      <DialogDescription>
-                        Restricting this user prevents them from posting, commenting, or interacting on the forum.
-                      </DialogDescription>
-                    </DialogHeader>
-
-                    {banSuccess && (
-                      <div className="flex items-start gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-xs text-emerald-600 dark:text-emerald-400">
-                        <CheckCircle2 className="size-4 mt-0.5 shrink-0" />
-                        <span>{banSuccess}</span>
-                      </div>
-                    )}
-
-                    {banError && (
-                      <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-xs text-destructive">
-                        <AlertCircle className="size-4 mt-0.5 shrink-0" />
-                        <span>{banError}</span>
-                      </div>
-                    )}
-
-                    <div className="space-y-3">
-                      {/* Ban Reason */}
-                      <div className="space-y-1.5">
-                        <Label htmlFor="ban-reason" className="text-xs font-semibold text-foreground">
-                          Reason for Ban <span className="text-destructive">*</span>
-                        </Label>
-                        <textarea
-                          id="ban-reason"
-                          required
-                          rows={3}
-                          maxLength={500}
-                          value={banReason}
-                          onChange={(e) => setBanReason(e.target.value)}
-                          placeholder="Provide a clear reason for the ban (e.g. inappropriate behavior, harassment, spam)"
-                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none"
-                          disabled={banLoading}
-                        />
-                        <div className="flex justify-end text-[11px] text-muted-foreground">
-                          {banReason.length}/500
-                        </div>
-                      </div>
-
-                      {/* Duration Preset Selector */}
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-semibold text-foreground">
-                          Ban Duration
-                        </Label>
-                        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-                          {[
-                            { value: "permanent", label: "Permanent" },
-                            { value: "24h", label: "24 Hours" },
-                            { value: "3d", label: "3 Days" },
-                            { value: "7d", label: "7 Days" },
-                            { value: "30d", label: "30 Days" },
-                            { value: "custom", label: "Custom" },
-                          ].map((item) => (
-                            <Button
-                              key={item.value}
-                              type="button"
-                              variant={banDurationType === item.value ? "default" : "outline"}
-                              size="sm"
-                              className="h-8 text-xs font-medium"
-                              onClick={() => setBanDurationType(item.value as typeof banDurationType)}
-                              disabled={banLoading}
-                            >
-                              {item.label}
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Custom Expiration Input */}
-                      {banDurationType === "custom" && (
-                        <div className="space-y-1.5 pt-1">
-                          <Label htmlFor="custom-expires-at" className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                            <Clock className="size-3.5" />
-                            Expiration Date & Time <span className="text-destructive">*</span>
-                          </Label>
-                          <Input
-                            id="custom-expires-at"
-                            type="datetime-local"
-                            value={customExpiresAt}
-                            onChange={(e) => setCustomExpiresAt(e.target.value)}
-                            min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
-                            className="h-9 max-w-full text-xs"
-                            required
-                            disabled={banLoading}
-                          />
-                        </div>
-                      )}
-                    </div>
-
-                    <DialogFooter>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setBanDialogOpen(false)
-                          setBanError(null)
-                          setBanSuccess(null)
-                        }}
-                        disabled={banLoading}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        type="submit"
-                        variant="destructive"
-                        size="sm"
-                        className="gap-1.5"
-                        disabled={banLoading || !banReason.trim() || (banDurationType === "custom" && !customExpiresAt)}
-                      >
-                        {banLoading ? (
-                          <Loader2 className="size-3.5 animate-spin" />
-                        ) : (
-                          <ShieldAlert className="size-3.5" />
-                        )}
-                        Confirm Ban
-                      </Button>
-                    </DialogFooter>
-                  </form>
-                </DialogContent>
-              </Dialog>
+                <Ban className="size-3.5" />
+                Ban User
+              </Button>
             </div>
           )}
         </div>
@@ -782,6 +745,218 @@ export function UserProfilePage() {
           </Card>
         </div>
       </div>
+
+      {/* STRICT: Ban create/edit and lift dialogs are only mounted for Moderators and Admins */}
+      {canBanUser && (
+        <>
+          <Dialog
+            open={banDialogOpen}
+            onOpenChange={(open) => {
+              setBanDialogOpen(open)
+              if (!open) {
+                setBanError(null)
+                setBanSuccess(null)
+              }
+            }}
+          >
+            <DialogContent className="sm:max-w-md">
+              <form onSubmit={handleBanSubmit} className="flex flex-col gap-4">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-destructive">
+                    {banDialogMode === "edit" ? (
+                      <Pencil className="size-5 shrink-0" />
+                    ) : (
+                      <ShieldAlert className="size-5 shrink-0" />
+                    )}
+                    <span className="min-w-0 break-words">
+                      {banDialogMode === "edit" ? "Edit Ban:" : "Ban User:"} {profile.username}
+                    </span>
+                  </DialogTitle>
+                  <DialogDescription>
+                    {banDialogMode === "edit"
+                      ? "Update the ban reason or duration. The user stays restricted until the ban expires or is lifted."
+                      : "Restricting this user prevents them from posting, commenting, or interacting on the forum."}
+                  </DialogDescription>
+                </DialogHeader>
+
+                {banSuccess && (
+                  <div className="flex items-start gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-xs text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="size-4 mt-0.5 shrink-0" />
+                    <span>{banSuccess}</span>
+                  </div>
+                )}
+
+                {banError && (
+                  <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-xs text-destructive">
+                    <AlertCircle className="size-4 mt-0.5 shrink-0" />
+                    <span>{banError}</span>
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ban-reason" className="text-xs font-semibold text-foreground">
+                      Reason for Ban <span className="text-destructive">*</span>
+                    </Label>
+                    <textarea
+                      id="ban-reason"
+                      required
+                      rows={3}
+                      maxLength={500}
+                      value={banReason}
+                      onChange={(e) => setBanReason(e.target.value)}
+                      placeholder="Provide a clear reason for the ban (e.g. inappropriate behavior, harassment, spam)"
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+                      disabled={banLoading}
+                    />
+                    <div className="flex justify-end text-[11px] text-muted-foreground">
+                      {banReason.length}/500
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold text-foreground">
+                      Ban Duration
+                    </Label>
+                    <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                      {[
+                        { value: "permanent", label: "Permanent" },
+                        { value: "24h", label: "24 Hours" },
+                        { value: "3d", label: "3 Days" },
+                        { value: "7d", label: "7 Days" },
+                        { value: "30d", label: "30 Days" },
+                        { value: "custom", label: "Custom" },
+                      ].map((item) => (
+                        <Button
+                          key={item.value}
+                          type="button"
+                          variant={banDurationType === item.value ? "default" : "outline"}
+                          size="sm"
+                          className="h-8 text-xs font-medium"
+                          onClick={() => setBanDurationType(item.value as BanDurationType)}
+                          disabled={banLoading}
+                        >
+                          {item.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {banDurationType === "custom" && (
+                    <div className="space-y-1.5 pt-1">
+                      <Label htmlFor="custom-expires-at" className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                        <Clock className="size-3.5" />
+                        Expiration Date & Time <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="custom-expires-at"
+                        type="datetime-local"
+                        value={customExpiresAt}
+                        onChange={(e) => setCustomExpiresAt(e.target.value)}
+                        min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
+                        className="h-9 max-w-full text-xs"
+                        required
+                        disabled={banLoading}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setBanDialogOpen(false)
+                      setBanError(null)
+                      setBanSuccess(null)
+                    }}
+                    disabled={banLoading}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    variant="destructive"
+                    size="sm"
+                    className="gap-1.5"
+                    disabled={banLoading || !banReason.trim() || (banDurationType === "custom" && !customExpiresAt)}
+                  >
+                    {banLoading ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : banDialogMode === "edit" ? (
+                      <Pencil className="size-3.5" />
+                    ) : (
+                      <ShieldAlert className="size-3.5" />
+                    )}
+                    {banDialogMode === "edit" ? "Save Changes" : "Confirm Ban"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog
+            open={deleteBanDialogOpen}
+            onOpenChange={(open) => {
+              setDeleteBanDialogOpen(open)
+              if (!open) {
+                setDeleteBanError(null)
+              }
+            }}
+          >
+            <DialogContent className="sm:max-w-sm">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-destructive">
+                  <ShieldOff className="size-5 shrink-0" />
+                  <span className="min-w-0 break-words">Lift Ban: {profile.username}</span>
+                </DialogTitle>
+                <DialogDescription>
+                  This restores their ability to post, comment, and interact on the forum. You can ban them again later if needed.
+                </DialogDescription>
+              </DialogHeader>
+
+              {deleteBanError && (
+                <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-xs text-destructive">
+                  <AlertCircle className="size-4 mt-0.5 shrink-0" />
+                  <span>{deleteBanError}</span>
+                </div>
+              )}
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setDeleteBanDialogOpen(false)
+                    setDeleteBanError(null)
+                  }}
+                  disabled={deleteBanLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => void handleDeleteBan()}
+                  disabled={deleteBanLoading}
+                >
+                  {deleteBanLoading ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <ShieldOff className="size-3.5" />
+                  )}
+                  Lift Ban
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </>
+      )}
     </div>
   )
 }

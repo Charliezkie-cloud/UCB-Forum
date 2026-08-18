@@ -5,6 +5,7 @@ import type {
   ChangePasswordRequest,
   DeleteAccountRequest,
   BanUserRequest,
+  UpdateBanRequest,
   UserBanResponse,
 } from "@/types"
 
@@ -44,6 +45,15 @@ export async function banUser(userId: number, payload: BanUserRequest): Promise<
 export async function getUserBanStatus(userId: number): Promise<UserBanResponse> {
   const response = await apiClient.get<UserBanResponse>(`/profiles/${userId}/ban`)
   return response.data
+}
+
+export async function updateUserBan(userId: number, payload: UpdateBanRequest): Promise<UserBanResponse> {
+  const response = await apiClient.put<UserBanResponse>(`/profiles/${userId}/ban`, payload)
+  return response.data
+}
+
+export async function deleteUserBan(userId: number): Promise<void> {
+  await apiClient.delete(`/profiles/${userId}/ban`)
 }
 
 export { addReputation, removeReputation } from "@/api/reputations"

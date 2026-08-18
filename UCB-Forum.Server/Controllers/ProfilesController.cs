@@ -209,6 +209,69 @@ public class ProfilesController : ControllerBase
         return Ok(response);
     }
 
+    [HttpPut("{userId:int}/ban")]
+    [Authorize(Policy = ForumPolicies.RequireModeratorOrAdmin)]
+    public async Task<ActionResult<UserBanResponse>> UpdateUserBan(
+        [FromRoute] int userId,
+        [FromBody] UpdateBanRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var callerUserId) || !TryGetRoleCode(out var callerRoleCode))
+        {
+            return Unauthorized(new { message = "Invalid user identity." });
+        }
+
+        var (response, error) = await _profileService.UpdateUserBanAsync(userId, request, callerUserId, callerRoleCode, cancellationToken);
+
+        if (error is not null)
+        {
+            if (error == "User not found." || error == "No active ban found.")
+            {
+                return NotFound(new { message = error });
+            }
+            if (error == "You do not have permission to edit bans." ||
+                error == "Administrators cannot be banned." ||
+                error == "Only administrators can edit bans on moderators.")
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = error });
+            }
+            return BadRequest(new { message = error });
+        }
+
+        return Ok(response);
+    }
+
+    [HttpDelete("{userId:int}/ban")]
+    [Authorize(Policy = ForumPolicies.RequireModeratorOrAdmin)]
+    public async Task<IActionResult> DeleteUserBan(
+        [FromRoute] int userId,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(out var callerUserId) || !TryGetRoleCode(out var callerRoleCode))
+        {
+            return Unauthorized(new { message = "Invalid user identity." });
+        }
+
+        var (_, error) = await _profileService.DeleteUserBanAsync(userId, callerUserId, callerRoleCode, cancellationToken);
+
+        if (error is not null)
+        {
+            if (error == "User not found." || error == "No active ban found.")
+            {
+                return NotFound(new { message = error });
+            }
+            if (error == "You do not have permission to delete bans." ||
+                error == "Administrators cannot be banned." ||
+                error == "Only administrators can delete bans on moderators.")
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = error });
+            }
+            return BadRequest(new { message = error });
+        }
+
+        return NoContent();
+    }
+
     [HttpGet("{userId:int}/ban")]
     [Authorize]
     public async Task<ActionResult<UserBanResponse>> GetUserBanStatus(

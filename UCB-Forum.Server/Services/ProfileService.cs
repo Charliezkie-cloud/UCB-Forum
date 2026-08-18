@@ -420,6 +420,138 @@ public class ProfileService
         }, null);
     }
 
+    public async Task<(UserBanResponse? Response, string? Error)> UpdateUserBanAsync(
+        int targetUserId,
+        UpdateBanRequest request,
+        int callerUserId,
+        int callerRoleCode,
+        CancellationToken cancellationToken = default)
+    {
+        var isCallerAdmin = callerRoleCode == (int)UserRole.Admin;
+        var isCallerMod = callerRoleCode == (int)UserRole.Moderator;
+
+        if (!isCallerAdmin && !isCallerMod)
+        {
+            return (null, "You do not have permission to edit bans.");
+        }
+
+        var targetUser = await _db.Users
+            .Include(u => u.Profile)
+            .FirstOrDefaultAsync(u => u.UserId == targetUserId, cancellationToken);
+
+        if (targetUser is null)
+        {
+            return (null, "User not found.");
+        }
+
+        if (targetUser.UserRoleCode == (int)UserRole.Admin)
+        {
+            return (null, "Administrators cannot be banned.");
+        }
+
+        if (targetUser.UserRoleCode == (int)UserRole.Moderator && !isCallerAdmin)
+        {
+            return (null, "Only administrators can edit bans on moderators.");
+        }
+
+        if (request.ExpiresAt.HasValue && request.ExpiresAt.Value <= DateTime.UtcNow)
+        {
+            return (null, "Ban expiration date must be in the future.");
+        }
+
+        var now = DateTime.UtcNow;
+        var activeBan = await _db.UserBans
+            .Include(b => b.BannedByUser)
+                .ThenInclude(u => u!.Profile)
+            .Where(b => b.UserId == targetUserId && b.IsActive && (!b.ExpiresAt.HasValue || b.ExpiresAt.Value > now))
+            .OrderByDescending(b => b.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (activeBan is null)
+        {
+            return (null, "No active ban found.");
+        }
+
+        activeBan.Reason = request.Reason.Trim();
+        activeBan.ExpiresAt = request.ExpiresAt;
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return (new UserBanResponse
+        {
+            BanId = activeBan.BanId,
+            UserId = activeBan.UserId,
+            BannedByUserId = activeBan.BannedByUserId,
+            BannedByUsername = activeBan.BannedByUser?.Profile?.Username,
+            CreatedAt = activeBan.CreatedAt,
+            ExpiresAt = activeBan.ExpiresAt,
+            Reason = activeBan.Reason,
+            IsActive = activeBan.IsActive
+        }, null);
+    }
+
+    public async Task<(UserBanResponse? Response, string? Error)> DeleteUserBanAsync(
+        int targetUserId,
+        int callerUserId,
+        int callerRoleCode,
+        CancellationToken cancellationToken = default)
+    {
+        var isCallerAdmin = callerRoleCode == (int)UserRole.Admin;
+        var isCallerMod = callerRoleCode == (int)UserRole.Moderator;
+
+        if (!isCallerAdmin && !isCallerMod)
+        {
+            return (null, "You do not have permission to delete bans.");
+        }
+
+        var targetUser = await _db.Users
+            .Include(u => u.Profile)
+            .FirstOrDefaultAsync(u => u.UserId == targetUserId, cancellationToken);
+
+        if (targetUser is null)
+        {
+            return (null, "User not found.");
+        }
+
+        if (targetUser.UserRoleCode == (int)UserRole.Admin)
+        {
+            return (null, "Administrators cannot be banned.");
+        }
+
+        if (targetUser.UserRoleCode == (int)UserRole.Moderator && !isCallerAdmin)
+        {
+            return (null, "Only administrators can delete bans on moderators.");
+        }
+
+        var now = DateTime.UtcNow;
+        var activeBan = await _db.UserBans
+            .Include(b => b.BannedByUser)
+                .ThenInclude(u => u!.Profile)
+            .Where(b => b.UserId == targetUserId && b.IsActive && (!b.ExpiresAt.HasValue || b.ExpiresAt.Value > now))
+            .OrderByDescending(b => b.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (activeBan is null)
+        {
+            return (null, "No active ban found.");
+        }
+
+        activeBan.IsActive = false;
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return (new UserBanResponse
+        {
+            BanId = activeBan.BanId,
+            UserId = activeBan.UserId,
+            BannedByUserId = activeBan.BannedByUserId,
+            BannedByUsername = activeBan.BannedByUser?.Profile?.Username,
+            CreatedAt = activeBan.CreatedAt,
+            ExpiresAt = activeBan.ExpiresAt,
+            Reason = activeBan.Reason,
+            IsActive = activeBan.IsActive
+        }, null);
+    }
+
     private static ProfileResponse MapToResponse(Profile profile)
     {
         return new ProfileResponse

@@ -9,6 +9,7 @@ export type {
   ChangePasswordRequest,
   DeleteAccountRequest,
   BanUserRequest,
+  UpdateBanRequest,
   UserBanResponse,
 } from "@/types/user"
 export type {
